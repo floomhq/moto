@@ -1,0 +1,108 @@
+{
+  "_comment": "Replace $HOME with your actual home directory path (e.g. /home/youruser or /Users/youruser). Claude Code does not expand $HOME in hook commands.",
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/block-destructive.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/enforce-server-routing.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/enforce-package-manager.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/scan-secrets-before-push.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/suggest-compact.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/protect-sensitive-files.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/protect-config-files.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Read|Edit|Write|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/post-compaction-recall.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/gemini-audit.sh",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/cost-tracker.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '[\"[\" + (now | todate) + \"] \" + ((.tool_input.command // \"?\") | gsub(\"\\\\n\"; \" \"))]' >> $HOME/.claude/bash-commands.log"
+          }
+        ]
+      }
+    ]
+  }
+}
