@@ -1,5 +1,5 @@
 {
-  "_comment": "Replace $HOME with your actual home directory path (e.g. /home/youruser or /Users/youruser). Claude Code does not expand $HOME in hook commands.",
+  "_comment": "Hook commands use absolute paths to your home directory. The install.sh script resolves these automatically. If you move your home directory, update the paths below.",
   "permissions": {
     "allow": [
       "Bash(*)",
