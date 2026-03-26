@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-compatible-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 
-A complete Claude Code developer setup: CLAUDE.md templates, 12 safety hooks, 30+ skills, server infrastructure, terminal workflow, WhatsApp/Gmail integration, memory system, and cost tracking. Everything is templated for reuse with no personal data.
+A complete Claude Code developer setup: CLAUDE.md templates, 12 safety hooks, 40+ skills, server infrastructure, terminal workflow, WhatsApp/Gmail integration, memory system, and cost tracking. Everything is templated for reuse with no personal data.
 
 ---
 
@@ -27,7 +27,7 @@ Most Claude Code configs share a single CLAUDE.md. This repo shares the **full s
 - [What's Included](#whats-included)
 - [CLAUDE.md Templates](#claudemd-templates)
 - [Safety Hooks](#safety-hooks)
-- [Skills (30+)](#skills-30)
+- [Skills (40+)](#skills-30)
 - [Memory System](#memory-system)
 - [Server Infrastructure](#server-infrastructure)
 - [WhatsApp & Gmail Integration](#whatsapp--gmail-integration)
@@ -124,9 +124,9 @@ All hooks are pure bash (no external deps beyond `jq`). See [`claude/hooks/READM
 
 ---
 
-## Skills (30+)
+## Skills (40+)
 
-Slash commands that extend Claude's capabilities. Each skill is a `SKILL.md` file installed to `~/.claude/commands/`. Invoke with `/skill-name` or let Claude detect and use them automatically.
+Slash commands that extend Claude's capabilities. Each skill is a `SKILL.md` file installed to `~/.claude/commands/`. Invoke with `/skill-name` or let Claude detect and use them automatically. Includes `session-learn`, a meta-skill that analyzes past session transcripts to derive new skills and CLAUDE.md rules from real usage patterns.
 
 <details>
 <summary><strong>Full skill list by category</strong></summary>
@@ -146,8 +146,11 @@ Slash commands that extend Claude's capabilities. Each skill is a `SKILL.md` fil
 **Design & Content:**
 `frontend-design`, `slide-design`, `canvas-design`, `algorithmic-art`, `linkedin-copy`, `cold-outreach`
 
-**Infrastructure:**
-`deploy` (multi-project), `email-check` (IMAP), `mcp-builder`, `webapp-testing`, `browse` (browser automation)
+**Infrastructure & Ops:**
+`deploy` (multi-project), `docker-deploy` (self-hosted), `dns` (IONOS API), `health` (system audit), `email-check` (IMAP), `wa` (WhatsApp read/send), `mcp-builder`, `webapp-testing`, `browse` (browser automation)
+
+**Context & Recovery:**
+`vault` (context vault ops), `morning` (daily briefing), `recall` (post-compaction recovery), `session-learn` (derive skills from sessions), `issue` (multi-account GitHub issues)
 
 **Meta:**
 `skill-creator` (create new skills), `subagent-templates`, `new-project` (scaffolding), `doc-coauthoring`, `workplan` (multi-step task planning)
