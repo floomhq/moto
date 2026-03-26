@@ -78,7 +78,7 @@ curl -s -X DELETE \
 
 | Type | Use case | Example content |
 |------|----------|-----------------|
-| A | IPv4 | `65.21.90.216` |
+| A | IPv4 | `93.184.216.34` |
 | CNAME | Alias | `cname.vercel-dns.com` |
 | TXT | Verification, SPF | `"v=spf1 include:..."` |
 | MX | Email | `10 smtp.example.com` |

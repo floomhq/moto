@@ -3,7 +3,7 @@ name: session-learn
 description: >
   Meta-skill that analyzes past session transcripts to derive new skills,
   CLAUDE.md rules, and MEMORY.md entries from real usage patterns. Use when
-  Federico says "session learn", "derive skills", "learn from sessions",
+  Use when user says "session learn", "derive skills", "learn from sessions",
   "what patterns", "analyze sessions", "extract rules", "what should I add
   to claude md", "improve my setup", or "what have I been doing repeatedly".
 ---
@@ -90,7 +90,7 @@ Always state the evidence count. "Seen in 4 sessions" is valid.
 
 ## Phase 4: Apply (after explicit approval)
 
-Wait for Federico to approve specific items. Apply only the approved items.
+Wait for explicit user approval. Apply only the approved items.
 
 ### Creating a new skill
 

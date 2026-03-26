@@ -1,103 +1,95 @@
 ---
 name: docker-deploy
 description: >
-  Self-hosted Docker deployment for Floom (AX41), FlyFast API (Hetzner), and
-  Clawdbot (AX41). Use when user says "docker deploy", "deploy floom",
-  "deploy flyfast api", "rebuild container", "restart container", or needs
-  to deploy a self-hosted service (not Vercel/Render).
+  Self-hosted Docker deployment for your services. Use when user says "docker
+  deploy", "rebuild container", "restart container", or needs to deploy a
+  self-hosted service (not Vercel/Render).
 ---
 
 # Docker Deploy Skill
 
 Detect the target project, build, deploy, and verify. Never guess - confirm project from context or ask.
 
+<!-- Customize: replace the example projects below with your own Docker services -->
+
 ## Projects
 
-### Floom (AX41 - this machine)
+### Example: Web App (Dev Server)
 
-- Path: `~/floom/`
-- DNS: floom.dev -> 65.21.90.216
-- Nginx: `/etc/nginx/sites-available/floom`
-- Container: `floom-demo`
-- Ports: 3004->3000 (frontend), 3005->3001 (API)
+- Path: `~/my-app/`
+- Container: `my-app`
+- Ports: 3000->3000
 
 **Build and deploy:**
 ```bash
-cd ~/floom
-docker build -t floom-web:latest .
-docker stop floom-demo 2>/dev/null || true
-docker rm floom-demo 2>/dev/null || true
-docker run -d --name floom-demo -p 3004:3000 -p 3005:3001 floom-web:latest
+cd ~/my-app
+docker build -t my-app:latest .
+docker stop my-app 2>/dev/null || true
+docker rm my-app 2>/dev/null || true
+docker run -d --name my-app -p 3000:3000 my-app:latest
 ```
 
 **Verify:**
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3004
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
 ```
 
 ---
 
-### FlyFast API (Hetzner VPS)
+### Example: API Service (Remote Server)
 
-- Source (AX41): `/root/opensky-app/api/main.py`
-- Deploy path (Hetzner): `/opt/flyfast/`
-- API URL: https://api.flyfast.app
-- Container: `opensky-api`, port 8090, 2 CPUs / 2GB RAM limit
+- Source: `/path/to/api/main.py`
+- Deploy path (remote): `/opt/my-api/`
+- Container: `my-api`, port 8090
 
 **Deploy flow:**
 ```bash
-# 1. Copy updated file(s) to Hetzner
-scp /root/opensky-app/api/main.py hetzner:/opt/flyfast/main.py
+# 1. Copy updated file(s) to remote
+scp /path/to/api/main.py remote-server:/opt/my-api/main.py
 
-# 2. Rebuild and restart on Hetzner
-ssh hetzner "cd /opt/flyfast && docker compose build && docker compose up -d"
+# 2. Rebuild and restart on remote
+ssh remote-server "cd /opt/my-api && docker compose build && docker compose up -d"
 ```
 
 **Verify:**
 ```bash
-curl -s -o /dev/null -w "%{http_code}" https://api.flyfast.app/health
+curl -s -o /dev/null -w "%{http_code}" https://api.example.com/health
 ```
 
-**Env vars**: `/opt/flyfast/.env` on Hetzner (do not overwrite without reading first).
+**Env vars**: `/opt/my-api/.env` on remote (do not overwrite without reading first).
 
 ---
 
-### Clawdbot (AX41 - this machine)
+### Example: Stateful Service (WhatsApp Gateway, DB, etc.)
 
-- Container: `clawdbot`, port 19000
-- Config: `/opt/clawdbot/`
-- Control: `clawdbot-ctl {start|stop|restart|logs|login|status|send}`
+<!-- Customize: for services where recreating the container destroys state -->
 
-**CRITICAL: NEVER run `docker-compose down` or `docker-compose up` on clawdbot.**
-This destroys the WhatsApp session, requiring a QR code scan from Federico's phone.
+- Container: `my-gateway`, port 19000
+- Config: `/opt/my-gateway/`
+
+**CRITICAL: NEVER run `docker-compose down` or `docker-compose up` on stateful containers.**
+This destroys session state (e.g., WhatsApp linking, DB data).
 
 **Restart only:**
 ```bash
-docker restart clawdbot
-# or
-clawdbot-ctl restart
-```
-
-**Verify:**
-```bash
-clawdbot-ctl status
+docker restart my-gateway
 ```
 
 ---
 
 ## Workflow
 
-1. Detect project from user input (Floom / FlyFast / Clawdbot).
-2. If ambiguous, ask: "Which project - Floom, FlyFast API, or Clawdbot?"
+1. Detect project from user input.
+2. If ambiguous, ask: "Which project?"
 3. Run the build/deploy sequence for that project.
 4. Run verification step and show the HTTP status code or container status.
 5. Report result. If verification fails, check container logs.
 
 **Check logs if something breaks:**
 ```bash
-# AX41 containers
+# Local containers
 docker logs --tail 50 <container-name>
 
-# Hetzner containers
-ssh hetzner "docker logs --tail 50 opensky-api"
+# Remote containers
+ssh remote-server "docker logs --tail 50 <container-name>"
 ```
