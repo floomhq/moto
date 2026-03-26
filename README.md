@@ -192,7 +192,7 @@ Templates for running Claude Code on a dedicated dev server (VPS/dedicated). Not
 
 ## WhatsApp & Gmail Integration
 
-**WhatsApp** (via [OpenClaw](https://github.com/nicokant/openclaw) gateway):
+**WhatsApp** (via [OpenClaw](https://github.com/openclaw/openclaw) gateway):
 - Docker-based WhatsApp Web bridge
 - Verified send script with SQLite contact lookup (prevents wrong-number sends)
 - Direct SQLite DB reading for message history
@@ -213,7 +213,7 @@ Templates for running Claude Code on a dedicated dev server (VPS/dedicated). Not
   .mcp.json          <- claude/.mcp.json (MCP servers)
   hooks/             <- claude/hooks/ (12 safety hooks)
   scripts/           <- claude/scripts/ (5 utility scripts)
-  commands/          <- claude/skills/ (30+ slash commands)
+  commands/          <- claude/skills/ (40+ slash commands)
   metrics/           <- cost tracking output (costs.jsonl)
   projects/*/memory/ <- external brain (MEMORY.md + topic files)
 
