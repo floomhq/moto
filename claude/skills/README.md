@@ -88,10 +88,13 @@ See `skill-creator/SKILL.md` for the full guide.
 
 | Skill | Description |
 |-------|-------------|
+| **agents** | Scan running Claude sessions to see what other agents are working on |
 | **algorithmic-art** | Create generative art using p5.js with seeded randomness and interactive controls |
 | **blast-radius** | Map full impact of a proposed change before making it |
 | **bouncer** | Pre-flight risk check before starting significant work |
+| **brand-guidelines** | Apply Anthropic's official brand colors and typography to any artifact |
 | **browse** | Browse the web, read pages, extract information, interact with websites |
+| **browser-use** | Automate browser interactions for web testing, form filling, and data extraction |
 | **canvas-design** | Create visual art and design in .png and .pdf using design philosophy |
 | **cold-outreach** | Write effective cold outreach messages for sales, partnerships, or networking |
 | **compass** | Strategic direction check - assess whether current work aligns with stated priorities |
@@ -101,34 +104,50 @@ See `skill-creator/SKILL.md` for the full guide.
 | **deploy** | Deploy projects to Vercel, Render, Docker, or Supabase |
 | **dns** | IONOS DNS management: add, update, delete records via API |
 | **doc-coauthoring** | Structured 3-stage workflow for co-authoring documents and specs |
-| **docker-deploy** | Self-hosted Docker deployment for Floom, FlyFast API, and Clawdbot |
+| **docker-deploy** | Self-hosted Docker deployment for containerized services |
 | **docx** | Create, read, edit, and manipulate Word documents (.docx files) |
 | **email-check** | Check, read, and search emails across IMAP accounts without marking as read |
+| **food-finder** | Find restaurants and food delivery options near a location via Swiggy + Google Maps |
 | **frontend-design** | Create distinctive, production-grade frontend interfaces with high design quality |
+| **geo** | Geographic data validator for aviation/travel apps: IATA codes, distances, routes |
 | **gh-launch** | GitHub repo launch checklist: secret scan, README polish, SEO, license, go public, distribution |
-| **health** | 10-second AX41 system audit: Docker, Chrome, mounts, orphans, disk, memory |
+| **health** | System audit: Docker, Chrome, mounts, orphans, disk, memory |
+| **internal-comms** | Write internal communications: 3P updates, newsletters, FAQs, incident reports |
 | **issue** | GitHub issue management with multi-account switching and per-project label conventions |
 | **linkedin-copy** | Write LinkedIn posts, profile copy, and professional content |
 | **mcp-builder** | Guide for creating high-quality MCP servers in TypeScript or Python |
 | **morning** | Daily briefing: unread emails, open issues, workplans, todos, system health |
+| **negotiator** | Negotiation analyst for high-stakes deals: BATNA, message scoring, counter-offers |
 | **new-project** | Scaffold a new project with standard setup, GitHub repo, and platform config |
 | **pdf** | Read, merge, split, rotate, create, and OCR PDF files |
+| **post-to-x** | Cross-post LinkedIn content to X (Twitter) with text adaptation and media upload |
 | **pptx** | Create, read, edit, and design PowerPoint presentations (.pptx files) |
+| **product** | Product strategy and UX decision-making for user-facing features |
 | **qa** | Analyze a diff and identify affected pages, routes, and systems |
 | **recall** | Post-compaction context recovery from session transcripts |
+| **republic-design** | Republic-style design reviewer and scorer for pitch decks and investor materials |
 | **retro** | Run a retrospective on a completed sprint, project, or time period |
+| **review-video** | Review videos by extracting frames and analyzing them visually |
+| **seo** | Technical SEO auditor: crawlability, schema.org, sitemaps, Core Web Vitals |
 | **session-learn** | Meta-skill: derive new skills and CLAUDE.md rules from past session analysis |
 | **ship** | Sync, test, review, push, and create a PR for code changes |
 | **skill-creator** | Guide for creating new skills that extend Claude's capabilities |
+| **slack-gif-creator** | Create animated GIFs optimized for Slack with PIL utilities and animation concepts |
 | **slide-design** | Visual design system for high-quality presentation slides |
 | **subagent-templates** | Templates and patterns for spawning and coordinating parallel Claude agents |
 | **target-loop** | Iterative improvement loop for any target output until it hits a quality bar |
+| **theme-factory** | Apply one of 10 pre-set color/font themes to any artifact (slides, docs, HTML) |
 | **ui-audit** | UX/product review + wireframe comparison with Playwright screenshots and CSS extraction |
+| **ux-audit** | Independent UX audit using Gemini as judge, scoring 7 UX dimensions with screenshots |
 | **vault** | Context vault operations: todos, log entries, vault search, strategy docs |
+| **video-edit** | AI-powered video editing: trim, concat, overlays, audio mix, voiceover, social export |
 | **wa** | WhatsApp read/send with safe verification gate and SQLite DB access |
 | **webapp-testing** | Test local web applications using Playwright |
+| **web-artifacts-builder** | Build complex claude.ai HTML artifacts with React, Tailwind CSS, and shadcn/ui |
 | **workplan** | Create, update, and close work plans for multi-step tasks |
 | **xlsx** | Create, read, edit, and analyze Excel spreadsheets (.xlsx files) |
+| **yc-pitch-deck** | Create YC-optimized investor pitch decks with slide structure and storytelling arc |
+| **yc-video** | Plan, audit, and score startup launch videos using YC-grade production standards |
 
 ## Customization
 

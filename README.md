@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-compatible-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 
-A complete Claude Code developer setup: CLAUDE.md templates, 12 safety hooks, 40+ skills, server infrastructure, terminal workflow, WhatsApp/Gmail integration, memory system, and cost tracking. Everything is templated for reuse with no personal data.
+A complete Claude Code developer setup: CLAUDE.md templates, 17 safety hooks, 60+ skills, server infrastructure, terminal workflow, WhatsApp/Gmail integration, memory system, and cost tracking. Everything is templated for reuse with no personal data.
 
 ---
 
@@ -46,7 +46,7 @@ cd claude-setup
 ./install.sh          # Symlinks configs into ~/.claude/
 ```
 
-That's it. The installer detects existing configs, backs them up, resolves `$HOME` paths in hook commands, and installs 12 hooks + 5 scripts + 40+ skills + memory template. Run `./install.sh --copy` for standalone files instead of symlinks.
+That's it. The installer detects existing configs, backs them up, resolves `$HOME` paths in hook commands, and installs 17 hooks + 7 scripts + 60+ skills + memory template. Run `./install.sh --copy` for standalone files instead of symlinks.
 
 **After install:**
 1. Edit `~/.claude/CLAUDE.md` to match your workflow (search for `<!-- Customize -->` comments)
@@ -92,7 +92,7 @@ Two templates encoding months of iteration on making Claude Code reliable:
 
 ## Safety Hooks
 
-12 hooks wired into `settings.json` that prevent Claude from doing damage. They run automatically on every tool call.
+17 hooks wired into `settings.json` that prevent Claude from doing damage. They run automatically on every tool call.
 
 | Hook | Trigger | What It Does |
 |------|---------|-------------|
@@ -107,6 +107,12 @@ Two templates encoding months of iteration on making Claude Code reliable:
 | `cost-tracker.sh` | Stop | Tracks token costs per model/session to `costs.jsonl` |
 | `gemini-audit.sh` + `.py` | Stop | Opt-in Gemini quality gate: scores output, blocks if < 10 |
 | `block-wa-send.sh` | Bash | Blocks unverified WhatsApp sends (optional, not wired by default) |
+| `block-terminal-minimize.sh` | Bash | Blocks AppleScript commands that minimize or hide terminal windows |
+| `cc-precompact-hook.sh` | PreCompact | Saves git diff, test results, and loop state before context compaction |
+| `cc-postcompact-hook.sh` | PostCompact | Restores saved state into context after compaction |
+| `enforce-hetzner-heavy-tasks.sh` | Bash | Blocks CPU-heavy tasks locally (Remotion, ffmpeg, Playwright), routes to dev server |
+| `rate-limit-auto-resume.sh` | Stop | Detects rate limit messages and schedules automatic resume via macOS `at` |
+| `sandbox-heavy-tasks.sh` | PreToolUse | Intercepts memory-hungry commands (whisper, ffmpeg, torch) and routes through sandbox |
 
 All hooks are pure bash (no external deps beyond `jq`). See [`claude/hooks/README.md`](claude/hooks/README.md) for how hooks work, the JSON protocol, and how to wire them in `settings.json`.
 
@@ -124,7 +130,7 @@ All hooks are pure bash (no external deps beyond `jq`). See [`claude/hooks/READM
 
 ---
 
-## Skills (40+)
+## Skills (60+)
 
 Slash commands that extend Claude's capabilities. Each skill is a `SKILL.md` file installed to `~/.claude/commands/`. Invoke with `/skill-name` or let Claude detect and use them automatically. Includes `session-learn`, a meta-skill that analyzes past session transcripts to derive new skills and CLAUDE.md rules from real usage patterns.
 
@@ -135,22 +141,25 @@ Slash commands that extend Claude's capabilities. Each skill is a `SKILL.md` fil
 `bouncer` (Gemini quality gate), `ship` (pre-merge workflow), `qa` (autonomous testing), `debug` (systematic debugging), `target-loop` (verified iteration engine), `gh-launch` (repo launch checklist)
 
 **Planning & Review:**
-`retro` (weekly retrospective), `compass` (strategic planning), `blast-radius` (impact analysis), `deep-audit` (full repo audit via Gemini), `cost` (token spend reporting)
+`retro` (weekly retrospective), `compass` (strategic planning), `blast-radius` (impact analysis), `deep-audit` (full repo audit via Gemini), `cost` (token spend reporting), `negotiator` (BATNA/ZOPA analysis, message scoring), `product` (UX decision framework)
 
 **Auditing:**
-`ui-audit` (UX/product review + wireframe comparison with Playwright screenshots and CSS extraction)
+`ui-audit` (UX/product review + wireframe comparison with Playwright screenshots and CSS extraction), `ux-audit` (independent Gemini-powered UX scoring), `seo` (technical SEO 8-dimension audit), `geo` (geographic data validator for aviation/travel)
 
 **Document Generation:**
-`pdf`, `docx`, `pptx`, `xlsx` manipulation
+`pdf`, `docx`, `pptx`, `xlsx` manipulation, `yc-pitch-deck` (investor pitch deck)
 
 **Design & Content:**
-`frontend-design`, `slide-design`, `canvas-design`, `algorithmic-art`, `linkedin-copy`, `cold-outreach`
+`frontend-design`, `slide-design`, `canvas-design`, `algorithmic-art`, `linkedin-copy`, `cold-outreach`, `brand-guidelines` (Anthropic brand), `republic-design` (investor-grade design scoring), `theme-factory` (10 pre-set visual themes), `web-artifacts-builder` (React + shadcn/ui artifacts), `internal-comms` (company newsletters, 3P updates)
+
+**Video & Media:**
+`video-edit` (trim, concat, overlays, audio mix, voiceover), `review-video` (frame extraction + visual review), `yc-video` (plan/score/audit startup launch videos), `slack-gif-creator` (animated GIFs optimized for Slack)
 
 **Infrastructure & Ops:**
-`deploy` (multi-project), `docker-deploy` (self-hosted), `dns` (DNS API), `health` (system audit), `email-check` (IMAP), `wa` (WhatsApp read/send), `mcp-builder`, `webapp-testing`, `browse` (browser automation)
+`deploy` (multi-project), `docker-deploy` (self-hosted), `dns` (DNS API), `health` (system audit), `email-check` (IMAP), `wa` (WhatsApp read/send), `mcp-builder`, `webapp-testing`, `browse` (browser automation), `browser-use` (persistent browser daemon), `post-to-x` (cross-post to X/Twitter)
 
 **Context & Recovery:**
-`vault` (context vault ops), `morning` (daily briefing), `recall` (post-compaction recovery), `session-learn` (derive skills from sessions), `issue` (multi-account GitHub issues)
+`vault` (context vault ops), `morning` (daily briefing), `recall` (post-compaction recovery), `session-learn` (derive skills from sessions), `issue` (multi-account GitHub issues), `agents` (scan running Claude sessions), `food-finder` (restaurant discovery via Swiggy + Maps)
 
 **Meta:**
 `skill-creator` (create new skills), `subagent-templates`, `new-project` (scaffolding), `doc-coauthoring`, `workplan` (multi-step task planning)

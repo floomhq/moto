@@ -175,6 +175,24 @@ When corrected on anything, immediately save the lesson to memory (MEMORY.md or 
 - **Pin dependencies** - Exact versions, no `^` or `~` surprises.
 - **Engine, not template** - When building a system/engine, fix the engine, not the example. If the output is wrong, the template is not the problem. Iterate on the abstraction layer, not the specific case.
 
+## Use Skills Proactively
+
+**Before starting any task, check available skills in the system reminder.** If a skill matches, invoke it immediately via the Skill tool.
+
+## CRITICAL: Always Use Subagents for Tasks
+
+**NEVER execute research, exploration, data gathering, or multi-step tasks directly in the main agent.**
+
+- Any task involving reading multiple files, browsing GitHub, checking APIs, or gathering data --> use `Task` tool with `run_in_background: true`
+- Main agent is for: routing, summarizing results, writing files, short targeted commands
+- Subagents protect the main context window and allow parallelism
+- This applies even for "quick" lookups -- spawn a subagent, don't pollute the main thread
+
+**Pattern:**
+- User asks to explore/research/gather --> launch background Task agent immediately
+- User asks to build/write/edit --> do it directly in main agent (it's fast and targeted)
+- User asks for both --> launch bg agent for research, proceed with building in parallel
+
 ## Shipping Flow
 
 <!-- Customize: adapt to your workflow. These are example skill commands. -->
@@ -249,6 +267,20 @@ When bugs/issues are raised:
 - **Create BEFORE starting work.** Read everything first, write the plan, then execute.
 - **After compaction**, re-read the active workplan before continuing. It is your source of truth.
 
+## Gemini URL Fallback
+
+When WebFetch fails (blocked URL, Reddit, paywalled sites), automatically retry via Gemini:
+```bash
+bash ~/.claude/scripts/gemini-fetch.sh "https://blocked-url.com"
+```
+Do NOT ask the user. Just use it when WebFetch returns an error or empty content on a URL the user asked you to read.
+
+## Gmail Access
+
+**Preserve Read/Unread Status** - Users use UNREAD to track items.
+- Use `BODY.PEEK[]` NOT `RFC822` (RFC822 marks as read)
+- If accidentally marked read: `mail.store(num, '-FLAGS', '\\Seen')`
+
 ## Quality Standards
 
 **Do NOT return until genuinely 10/10.**
@@ -266,6 +298,17 @@ When bugs/issues are raised:
 - **Never score 10/10 without explicitly listing what could still be wrong.** If you can't find anything, you haven't looked hard enough. Unexamined 10/10 = automatic 6/10.
 - **Use adversarial personas for scoring.** Don't ask "how good is this?" Ask: "What would a skeptical user/reviewer find wrong?"
 - **Score inflation kills trust.** An honest 7/10 with a clear fix list is more valuable than a fake 10/10.
+
+## Ralph Loop
+
+For non-trivial multi-step tasks, proactively suggest Ralph Loop:
+> "This is a multi-step task. Want me to use Ralph Loop to iterate until it's perfect?"
+
+If yes:
+```
+/ralph-loop "The task description here" --completion-promise "DONE" --max-iterations 20
+```
+Output `<promise>DONE</promise>` when genuinely 10/10. Cancel: `/cancel-ralph`
 
 ---
 
