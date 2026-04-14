@@ -29,6 +29,21 @@ server/
 
 ## Quick Deploy
 
+### 0. Authenticate Claude Code (Max/Pro plan, from your Mac)
+
+Logging in to Claude Code on a headless Linux server via the normal OAuth flow is broken: the authorization code gets mangled on paste, and even when it succeeds the TUI shows a sign-in screen on every startup because `hasCompletedOnboarding` is missing from `~/.claude.json`.
+
+The fix: push credentials from your Mac directly.
+
+```bash
+# Run from your Mac, after logging in to Claude Code locally
+./setup-claude-auth.sh dev   # replace "dev" with your SSH alias
+```
+
+This copies your OAuth token from the macOS Keychain to the server, sets `ANTHROPIC_AUTH_TOKEN` in `~/.bashrc`, and marks onboarding complete in `~/.claude.json`. After that, `ssh dev && claude` works with no prompts.
+
+If you're using an API key instead of a Max/Pro plan, skip this step and set `ANTHROPIC_API_KEY` in the server's `~/.bashrc`.
+
 ### 1. Install safety wrappers
 ```bash
 cp safety/safe-pipeline /usr/local/bin/safe-pipeline
