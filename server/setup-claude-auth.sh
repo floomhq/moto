@@ -10,7 +10,7 @@
 # What it does:
 #   1. Extracts your OAuth credentials from the macOS Keychain
 #   2. Copies them to the server as ~/.claude/.credentials.json
-#   3. Sets ANTHROPIC_AUTH_TOKEN in ~/.bashrc (suppresses the interactive sign-in screen)
+#   3. Sets ANTHROPIC_AUTH_TOKEN in ~/.bashrc (reads from credentials file at login)
 #   4. Marks onboarding complete in ~/.claude.json so the theme picker doesn't block startup
 #
 # Background: Claude Code's headless OAuth flow on Linux is broken — the authorization
@@ -22,6 +22,12 @@ set -euo pipefail
 
 SERVER="${1:-dev}"
 
+# Validate SSH alias — only allow safe hostname/alias characters
+if ! [[ "$SERVER" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+    echo -e "\033[0;31m[ERROR]\033[0m Invalid SSH alias: '$SERVER'. Use only letters, numbers, dots, hyphens, underscores." >&2
+    exit 1
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -29,7 +35,7 @@ NC='\033[0m'
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 ok()   { echo -e "${GREEN}[OK]${NC} $1"; }
-err()  { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+err()  { echo -e "${RED}[ERROR]${NC} $1" >&2; exit 1; }
 
 # --- 1. Extract credentials from macOS Keychain ---
 
@@ -40,17 +46,17 @@ if [ -z "$CREDS" ]; then
     err "No Claude Code credentials found in Keychain. Log in to Claude Code on this Mac first, then re-run."
 fi
 
-ACCESS_TOKEN=$(echo "$CREDS" | python3 -c "
+# Validate that the JSON parses and contains the expected key
+if ! echo "$CREDS" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
-print(d['claudeAiOauth']['accessToken'])
-" 2>/dev/null || true)
-
-if [ -z "$ACCESS_TOKEN" ]; then
-    err "Could not parse access token from credentials. Keychain entry may be malformed."
+if 'claudeAiOauth' not in d or 'accessToken' not in d['claudeAiOauth']:
+    raise KeyError('claudeAiOauth.accessToken missing')
+" 2>/dev/null; then
+    err "Could not parse access token from credentials. Keychain entry may be malformed. Try: security find-generic-password -s 'Claude Code-credentials' -w"
 fi
 
-ok "Credentials extracted (token: ${ACCESS_TOKEN:0:20}...)"
+ok "Credentials extracted."
 
 # --- 2. Verify SSH connection ---
 
@@ -62,20 +68,24 @@ ok "Connected to $SERVER"
 
 info "Copying credentials to $SERVER:~/.claude/.credentials.json..."
 ssh "$SERVER" "mkdir -p ~/.claude"
-echo "$CREDS" | ssh "$SERVER" "cat > ~/.claude/.credentials.json && chmod 600 ~/.claude/.credentials.json"
+printf '%s\n' "$CREDS" | ssh "$SERVER" "cat > ~/.claude/.credentials.json && chmod 600 ~/.claude/.credentials.json"
 ok ".credentials.json installed"
 
 # --- 4. Set ANTHROPIC_AUTH_TOKEN in .bashrc ---
-# This tells Claude Code's interactive TUI that auth is already handled,
-# suppressing the sign-in screen even before the credentials file is read.
+# Read the token dynamically from the credentials file at login rather than storing
+# the literal token value. This keeps ~/.bashrc free of credential plaintext and
+# automatically picks up refreshed tokens without re-running this script.
 
 info "Setting ANTHROPIC_AUTH_TOKEN in ~/.bashrc on $SERVER..."
-ssh "$SERVER" "
-    # Remove any stale entry first
-    sed -i '/ANTHROPIC_AUTH_TOKEN/d' ~/.bashrc
-    echo 'export ANTHROPIC_AUTH_TOKEN=\"${ACCESS_TOKEN}\"' >> ~/.bashrc
-"
-ok "ANTHROPIC_AUTH_TOKEN set in ~/.bashrc"
+# Use bash -s + heredoc to safely inject the dynamic token line without quoting nightmares.
+# The token is sourced from the credentials file at each login — no literal token in .bashrc.
+ssh "$SERVER" 'bash -s' <<'REMOTESCRIPT'
+sed -i '/ANTHROPIC_AUTH_TOKEN/d' ~/.bashrc
+cat >> ~/.bashrc <<'BASHLINE'
+export ANTHROPIC_AUTH_TOKEN=$(python3 -c "import json,os; d=json.load(open(os.path.expanduser('~/.claude/.credentials.json'))); print(d['claudeAiOauth']['accessToken'])" 2>/dev/null)
+BASHLINE
+REMOTESCRIPT
+ok "ANTHROPIC_AUTH_TOKEN set in ~/.bashrc (reads from credentials file)"
 
 # --- 5. Mark onboarding complete in ~/.claude.json ---
 # Without this, Claude Code shows a theme picker on every startup because
@@ -106,8 +116,8 @@ ok "~/.claude.json updated"
 # --- 6. Verify ---
 
 info "Verifying auth on $SERVER..."
-RESULT=$(ssh "$SERVER" "bash -i -c 'claude auth status 2>/dev/null'" 2>/dev/null || true)
-if echo "$RESULT" | grep -q '"loggedIn": true'; then
+RESULT=$(ssh "$SERVER" "claude auth status 2>/dev/null" 2>/dev/null || true)
+if echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('loggedIn') else 1)" 2>/dev/null; then
     EMAIL=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('email','unknown'))" 2>/dev/null || echo "unknown")
     ok "Authenticated as $EMAIL"
 else
@@ -123,4 +133,4 @@ echo ""
 echo "  ssh $SERVER"
 echo "  claude"
 echo ""
-echo "Note: The OAuth token expires in ~1 year. Re-run this script to refresh."
+echo "Note: The credentials file expires in ~1 year. Re-run this script to refresh."
