@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.2.0] - 2026-04-14
+
+### Added
+
+- `server/terminal/start-claude-sessions.sh`: boot script that auto-starts one tmux session per git repo in `/root` on server reboot. Each session cds into the repo and runs `happy claude` (swappable with `claude` if not using Happy). Install via `@reboot` cron. Idempotent — skips repos that already have a running session.
+- `server/terminal/README.md`: documented Happy (mobile/web access to headless Claude Code sessions), the boot script, and installation steps for both.
+- `server/README.md`: Quick Deploy steps 6 (auto-start on boot) and 7 (Happy mobile access).
+- `mac/zshrc`: Mac-side shell template with `dev()` iTerm2 multi-tab function (opens one tab per server tmux session) and `devs` alias (list sessions without attaching).
+
 ## [0.0.1.0] - 2026-04-14
 
 ### Added

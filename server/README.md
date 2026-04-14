@@ -86,6 +86,30 @@ systemctl enable --now chrome-bridge-keeper
 ```bash
 cp terminal/tmux.conf ~/.tmux.conf
 # Add useful aliases from terminal/ scripts to your ~/.bashrc
+cp server/bashrc ~/.bashrc  # or source it from your existing ~/.bashrc
+```
+
+### 6. Auto-start sessions on boot (optional)
+
+Starts one tmux session per git repo in `/root` on every server reboot, each running `happy claude`:
+
+```bash
+cp terminal/start-claude-sessions.sh /usr/local/bin/start-claude-sessions.sh
+chmod +x /usr/local/bin/start-claude-sessions.sh
+(crontab -l 2>/dev/null; echo "@reboot /usr/local/bin/start-claude-sessions.sh") | crontab -
+```
+
+Replace `happy claude` with `claude` if you're not using Happy for mobile access.
+
+### 7. Mobile access with Happy (optional)
+
+[Happy](https://github.com/slopus/happy) gives you a mobile/web interface to control
+Claude Code sessions on the server.
+
+```bash
+npm install -g happy
+# Then start sessions with: happy claude
+# Or set as default in ~/.tmux.conf: set -g default-command "happy claude"
 ```
 
 ## Key Concepts
