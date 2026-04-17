@@ -186,6 +186,8 @@ This prevents Claude from repeating mistakes across sessions and lets it build o
 
 Templates for running Claude Code on a dedicated dev server (VPS/dedicated). Not needed for local-only setups.
 
+> 🛵 **Want the one-command, opinionated version?** See **[moto](https://github.com/buildingopen/moto)** — the same building blocks (systemd, Chrome CDP, SSHFS, tmux, residential proxy) consolidated into `./install.sh server` + a `moto up` CLI that restores 20+ agent tabs in one iTerm window. `claude-setup`'s `server/` directory is the raw ingredient list; `moto` is the cake.
+
 <details>
 <summary><strong>What's in server/</strong></summary>
 
@@ -262,6 +264,7 @@ Other open-source tools from BuildingOpen:
 
 | Project | Description |
 |---------|-------------|
+| **[moto](https://github.com/buildingopen/moto)** | 🛵 One-command remote agent server — run 20+ Claude Code / Codex / opencode sessions on a Linux box, controlled from your Mac. The opinionated version of this repo's `server/` directory |
 | **[bouncer](https://github.com/buildingopen/bouncer)** | Independent Gemini quality gate that audits Claude Code's output before it can stop |
 | **[claude-code-stats](https://github.com/buildingopen/claude-code-stats)** | Spotify Wrapped for Claude Code. Visualize your AI coding stats, token usage, and costs |
 | **[claude-wrapped](https://github.com/buildingopen/claude-wrapped)** | Visualize your Claude Code stats with `npx claude-entropy` |

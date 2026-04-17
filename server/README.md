@@ -2,6 +2,8 @@
 
 This directory contains everything needed to turn a dedicated Linux server into a productive Claude Code environment with browser automation, safe execution wrappers, SSHFS mounts, and multi-account tooling.
 
+> 🛵 **Prefer one command?** [moto](https://github.com/buildingopen/moto) bundles all of the below into `./install.sh server` plus a `moto up` CLI that restores every tmux agent session as a tab in one iTerm window. Use that if you want the reproducible, opinionated path; stick with this directory if you want to cherry-pick the pieces into your own setup.
+
 ## Prerequisites
 
 - Ubuntu 22.04+ or Debian 12+
