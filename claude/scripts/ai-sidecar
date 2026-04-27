@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""Call low-cost stateless sidecar models for bounded text work."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import platform
+import re
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+
+PROVIDERS = {
+    "groq": {
+        "env": "GROQ_API_KEY",
+        "model_env": "GROQ_MODEL",
+        "keychain": "codex:GROQ_API_KEY",
+        "store": "groq",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "model": "qwen/qwen3-32b",
+    },
+    "openrouter": {
+        "env": "OPENROUTER_API_KEY",
+        "model_env": "OPENROUTER_MODEL",
+        "keychain": "codex:OPENROUTER_API_KEY",
+        "store": "openrouter",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "model": "openrouter/free",
+    },
+    "nvidia": {
+        "env": "NVIDIA_API_KEY",
+        "model_env": "NVIDIA_MODEL",
+        "keychain": "codex:NVIDIA_API_KEY",
+        "store": "nvidia",
+        "url": "https://integrate.api.nvidia.com/v1/chat/completions",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+    },
+}
+
+SYSTEM_PROMPT = """You are a stateless senior code reviewer used as a sidecar.
+Be concise. Do not claim you inspected files that were not provided.
+Return concrete findings, risks, or a bounded implementation sketch.
+If the prompt lacks enough context, say exactly what is missing."""
+
+
+def clean_model_text(text: str) -> str:
+    cleaned = re.sub(r"(?is)<think>.*?</think>", "", text).strip()
+    return cleaned or text.strip()
+
+
+def store_path() -> Path:
+    return Path(os.environ.get("AI_SIDECAR_DIR", Path.home() / ".config/ai-sidecar")) / "keys.json"
+
+
+def key_from_file(provider: str) -> str:
+    try:
+        data = json.loads(store_path().read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return ""
+    value = data.get(provider, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def key_from_keychain(service: str) -> str:
+    if platform.system() != "Darwin":
+        return ""
+    try:
+        result = subprocess.run(
+            ["security", "find-generic-password", "-a", os.environ.get("USER", ""), "-s", service, "-w"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def get_key(provider: str) -> tuple[str, str]:
+    cfg = PROVIDERS[provider]
+    key = key_from_keychain(cfg["keychain"])
+    if key:
+        return key, f"Keychain:{cfg['keychain']}"
+    key = key_from_file(cfg["store"])
+    if key:
+        return key, "keys.json"
+    if os.environ.get("AI_SIDECAR_ALLOW_ENV") == "1":
+        key = os.environ.get(cfg["env"], "").strip()
+        if key:
+            return key, f"${cfg['env']}"
+    raise SystemExit(f"Missing {cfg['env']}. Run: ai-provider-key set {provider}")
+
+
+def read_prompt(args: argparse.Namespace) -> str:
+    parts: list[str] = []
+    if args.prompt:
+        parts.append(" ".join(args.prompt))
+    if not sys.stdin.isatty():
+        stdin = sys.stdin.read().strip()
+        if stdin:
+            parts.append(stdin)
+    prompt = "\n\n".join(parts).strip()
+    if not prompt:
+        raise SystemExit("Provide a prompt argument or pipe content on stdin.")
+    return prompt
+
+
+def call_provider(provider: str, model: str, prompt: str, max_tokens: int, timeout: int) -> str:
+    cfg = PROVIDERS[provider]
+    key, key_source = get_key(provider)
+    user_prompt = prompt
+    if provider == "groq" and model.startswith("qwen/") and not prompt.lstrip().startswith("/no_think"):
+        user_prompt = f"/no_think\n{prompt}"
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.2,
+        "max_tokens": max_tokens,
+    }
+    if provider == "nvidia":
+        payload["chat_template_kwargs"] = {"enable_thinking": False}
+
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 moto-ai-sidecar/1.0",
+    }
+    if provider == "openrouter":
+        headers.update({"HTTP-Referer": "https://localhost", "X-Title": "moto AI Sidecar"})
+
+    request = urllib.request.Request(
+        cfg["url"],
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"{provider} HTTP {exc.code} using {key_source}: {body[:1200]}")
+    except urllib.error.URLError as exc:
+        raise SystemExit(f"{provider} request failed: {exc}")
+
+    try:
+        message = data["choices"][0]["message"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise SystemExit(f"Unexpected {provider} response: {json.dumps(data)[:1200]}") from exc
+
+    content = message.get("content")
+    if isinstance(content, list):
+        content = "\n".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+    if isinstance(content, str) and content.strip():
+        return clean_model_text(content)
+
+    reasoning = message.get("reasoning")
+    if isinstance(reasoning, str) and reasoning.strip():
+        return clean_model_text(reasoning)
+
+    raise SystemExit(f"Empty {provider} response: {json.dumps(data)[:1200]}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("provider", choices=sorted(PROVIDERS))
+    parser.add_argument("prompt", nargs="*")
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--max-tokens", type=int, default=1200)
+    parser.add_argument("--timeout", type=int, default=int(os.environ.get("AI_SIDECAR_TIMEOUT", "120")))
+    args = parser.parse_args()
+
+    cfg = PROVIDERS[args.provider]
+    model = args.model or os.environ.get(cfg["model_env"]) or cfg["model"]
+    print(call_provider(args.provider, model, read_prompt(args), args.max_tokens, args.timeout))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

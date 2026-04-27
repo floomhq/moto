@@ -160,12 +160,20 @@ install_local() {
     ok "$(find "$SCRIPT_DIR/claude/hooks" -maxdepth 1 -type f \( -name '*.sh' -o -name '*.py' \) | wc -l | tr -d ' ') hooks installed"
 
     info "Installing scripts..."
-    for script in "$SCRIPT_DIR"/claude/scripts/*.sh; do
+    for script in "$SCRIPT_DIR"/claude/scripts/*; do
         [ -f "$script" ] || continue
         install_file "$script" "$CLAUDE_DIR/scripts/$(basename "$script")" "$mode"
         chmod +x "$CLAUDE_DIR/scripts/$(basename "$script")"
     done
-    ok "$(find "$SCRIPT_DIR/claude/scripts" -maxdepth 1 -type f -name '*.sh' | wc -l | tr -d ' ') scripts installed"
+    ok "$(find "$SCRIPT_DIR/claude/scripts" -maxdepth 1 -type f | wc -l | tr -d ' ') scripts installed"
+
+    info "Installing sidecar commands to ~/.local/bin..."
+    mkdir -p "$HOME/.local/bin"
+    for script in ai-provider-key ai-sidecar ai-sidecar-health; do
+        install_file "$SCRIPT_DIR/claude/scripts/$script" "$HOME/.local/bin/$script" "$mode"
+        chmod +x "$HOME/.local/bin/$script"
+    done
+    ok "sidecar commands installed to $HOME/.local/bin"
 
     info "Installing skills..."
     for skill_dir in "$SCRIPT_DIR"/claude/skills/*/; do

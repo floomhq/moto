@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+"""Store provider API keys for moto sidecars without writing them to repos."""
+
+from __future__ import annotations
+
+import argparse
+import getpass
+import json
+import os
+import platform
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+
+PROVIDERS = {
+    "gemini": "GEMINI_FREE_API_KEY",
+    "groq": "GROQ_API_KEY",
+    "openrouter": "OPENROUTER_API_KEY",
+    "nvidia": "NVIDIA_API_KEY",
+}
+
+
+def store_path() -> Path:
+    return Path(os.environ.get("AI_SIDECAR_DIR", Path.home() / ".config/ai-sidecar")) / "keys.json"
+
+
+def is_macos() -> bool:
+    return platform.system() == "Darwin" and bool(shutil_which("security"))
+
+
+def shutil_which(name: str) -> str | None:
+    from shutil import which
+
+    return which(name)
+
+
+def keychain_service(provider: str) -> str:
+    return f"codex:{PROVIDERS[provider]}"
+
+
+def keychain_get(provider: str) -> str:
+    result = subprocess.run(
+        [
+            "security",
+            "find-generic-password",
+            "-a",
+            os.environ.get("USER", ""),
+            "-s",
+            keychain_service(provider),
+            "-w",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def keychain_set(provider: str, secret: str) -> None:
+    subprocess.run(
+        [
+            "security",
+            "add-generic-password",
+            "-U",
+            "-a",
+            os.environ.get("USER", ""),
+            "-s",
+            keychain_service(provider),
+            "-w",
+            secret,
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+
+
+def keychain_delete(provider: str) -> None:
+    subprocess.run(
+        [
+            "security",
+            "delete-generic-password",
+            "-a",
+            os.environ.get("USER", ""),
+            "-s",
+            keychain_service(provider),
+        ],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def ensure_file_store() -> Path:
+    path = store_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.chmod(0o700)
+    if not path.exists():
+        path.write_text("{}\n")
+    path.chmod(0o600)
+    return path
+
+
+def read_file_store() -> dict[str, str]:
+    path = ensure_file_store()
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        data = {}
+    return {str(k): str(v) for k, v in data.items()}
+
+
+def write_file_store(data: dict[str, str]) -> None:
+    path = ensure_file_store()
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".keys.", suffix=".tmp")
+    with os.fdopen(fd, "w") as handle:
+        json.dump(data, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, path)
+
+
+def get_key(provider: str) -> str:
+    if is_macos():
+        return keychain_get(provider)
+    return read_file_store().get(provider, "")
+
+
+def set_key(provider: str, secret: str) -> None:
+    if is_macos():
+        keychain_set(provider, secret)
+    else:
+        data = read_file_store()
+        data[provider] = secret
+        write_file_store(data)
+
+
+def delete_key(provider: str) -> None:
+    if is_macos():
+        keychain_delete(provider)
+    else:
+        data = read_file_store()
+        data.pop(provider, None)
+        write_file_store(data)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["set", "get", "delete", "list"])
+    parser.add_argument("provider", nargs="?", choices=sorted(PROVIDERS))
+    args = parser.parse_args()
+
+    if args.command != "list" and not args.provider:
+        parser.error("provider is required")
+
+    if args.command == "set":
+        secret = sys.stdin.readline().rstrip("\n") if not sys.stdin.isatty() else getpass.getpass(
+            f"Enter {PROVIDERS[args.provider]}: "
+        )
+        if not secret:
+            raise SystemExit("Empty key; nothing stored.")
+        set_key(args.provider, secret)
+        print(f"Stored {args.provider}.")
+        return 0
+
+    if args.command == "get":
+        secret = get_key(args.provider)
+        if not secret:
+            return 1
+        print(secret)
+        return 0
+
+    if args.command == "delete":
+        delete_key(args.provider)
+        print(f"Deleted {args.provider} if it existed.")
+        return 0
+
+    for provider in sorted(PROVIDERS):
+        if get_key(provider):
+            print(provider)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

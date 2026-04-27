@@ -43,6 +43,7 @@ The philosophy is simple:
 - [Mac iTerm Workflow](#mac-iterm-workflow)
 - [CLAUDE.md Templates](#claudemd-templates)
 - [Safety Hooks](#safety-hooks)
+- [Low-Cost AI Sidecars](#low-cost-ai-sidecars)
 - [Skills (40+)](#skills-40)
 - [Memory System](#memory-system)
 - [Server Infrastructure](#server-infrastructure)
@@ -136,6 +137,35 @@ Two templates encoding months of iteration on making Claude Code reliable:
 
 ---
 
+## Low-Cost AI Sidecars
+
+`moto` treats frontier agents as the control plane and routes bounded text work to cheaper sidecars. The goal is simple: spend premium model budget on judgment, orchestration, debugging, architecture, and final review; use cheaper/free models for narrow stateless work.
+
+| Route | Typical use | Notes |
+|-------|-------------|-------|
+| Gemini free / OAuth wrapper | broad repo summaries, docs drafts, test plans | Good for large text-in/text-out analysis when privacy constraints allow |
+| Groq | single-file review, diff chunks, error logs | Fast stateless reviewer; prefer prompts with tight scope |
+| OpenRouter free | backup free route | Expect provider throttling and model changes |
+| NVIDIA NIM | hosted specialist sidecar | Use stronger models for difficult reasoning or code-specific second opinions |
+| Local Ollama on the remote box | private/offline bounded work | Slow on CPU; advisory only, not final correctness authority |
+
+Recommended routing pattern:
+
+- Use hosted sidecars for stateless research, summaries, diff review, and second opinions.
+- Use NVIDIA `deepseek-ai/deepseek-v4-pro` for high-depth reasoning, difficult code analysis, long-context synthesis, and planning.
+- Use NVIDIA `qwen/qwen3-coder-480b-a35b-instruct` for code-specific second opinions.
+- Use a local Ollama model only when privacy/offline locality matters and the prompt is self-contained.
+- Keep final authority with Claude Code, Codex, tests, screenshots, builds, and direct evidence.
+
+Provider keys belong in a local secret store, never in repos or shell startup files. A practical implementation is:
+
+- macOS: Keychain services such as `codex:GROQ_API_KEY`, `codex:NVIDIA_API_KEY`, `codex:OPENROUTER_API_KEY`
+- Linux remote: `~/.config/ai-sidecar/keys.json` with directory mode `700` and file mode `600`
+
+See [`docs/architecture.md`](docs/architecture.md) for how this fits into the Mac + remote Linux runtime.
+
+---
+
 ## Safety Hooks
 
 17 hooks wired into `settings.json` that prevent Claude from doing damage. They run automatically on every tool call.
@@ -173,6 +203,9 @@ All hooks are pure bash (no external deps beyond `jq`). See [`claude/hooks/READM
 | `claude-rate-limit-watcher.sh` | Background rate limit monitor daemon |
 | `claude-switch.sh` | Switch between multiple Claude accounts |
 | `sync-claude-config.sh` | Sync CLAUDE.md across machines via SCP |
+| `ai-provider-key` | Store sidecar provider keys in Keychain or a 0600 Linux key file |
+| `ai-sidecar` | Call Groq, OpenRouter, or NVIDIA for bounded stateless text work |
+| `ai-sidecar-health` | Verify configured sidecar providers with tiny health checks |
 
 ---
 
@@ -299,7 +332,7 @@ See [`mac/README.md`](mac/README.md) for the full setup.
   settings.json      <- claude/settings.json (hooks + permissions, $HOME resolved)
   .mcp.json          <- claude/.mcp.json (MCP servers)
   hooks/             <- claude/hooks/ (12 safety hooks)
-  scripts/           <- claude/scripts/ (5 utility scripts)
+  scripts/           <- claude/scripts/ (utility scripts + AI sidecars)
   commands/          <- claude/skills/ (40+ slash commands)
   metrics/           <- cost tracking output (costs.jsonl)
   projects/*/memory/ <- external brain (MEMORY.md + topic files)

@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Health check for moto low-cost AI sidecars."""
+
+from __future__ import annotations
+
+import json
+import os
+import platform
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+
+KEYS = {
+    "gemini": ("GEMINI_FREE_API_KEY", "codex:GEMINI_FREE_API_KEY", "gemini"),
+    "groq": ("GROQ_API_KEY", "codex:GROQ_API_KEY", "groq"),
+    "openrouter": ("OPENROUTER_API_KEY", "codex:OPENROUTER_API_KEY", "openrouter"),
+    "nvidia": ("NVIDIA_API_KEY", "codex:NVIDIA_API_KEY", "nvidia"),
+}
+
+
+def store_path() -> Path:
+    return Path(os.environ.get("AI_SIDECAR_DIR", Path.home() / ".config/ai-sidecar")) / "keys.json"
+
+
+def key_from_file(provider: str) -> str:
+    try:
+        data = json.loads(store_path().read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return ""
+    value = data.get(provider, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def key_from_keychain(service: str) -> str:
+    if platform.system() != "Darwin":
+        return ""
+    try:
+        result = subprocess.run(
+            ["security", "find-generic-password", "-a", os.environ.get("USER", ""), "-s", service, "-w"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def key(name: str) -> str:
+    env_name, service, provider = KEYS[name]
+    found = key_from_keychain(service) or key_from_file(provider)
+    if found:
+        return found
+    if os.environ.get("AI_SIDECAR_ALLOW_ENV") == "1":
+        return os.environ.get(env_name, "").strip()
+    return ""
+
+
+def post_json(url: str, payload: dict, headers: dict[str, str], timeout: int = 60) -> dict:
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def check_gemini() -> dict:
+    api_key = key("gemini")
+    if not api_key:
+        return {"ok": False, "reason": "missing key"}
+    model = "gemini-2.5-flash-lite"
+    data = post_json(
+        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:countTokens?key={api_key}",
+        {"contents": [{"parts": [{"text": "Reply OK"}]}]},
+        {"Content-Type": "application/json"},
+    )
+    return {"ok": True, "model": model, "tokens": data.get("totalTokens")}
+
+
+def check_openrouter() -> dict:
+    api_key = key("openrouter")
+    if not api_key:
+        return {"ok": False, "reason": "missing key"}
+    data = post_json(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+            "model": "openrouter/free",
+            "messages": [{"role": "user", "content": "Reply with exactly OK."}],
+            "temperature": 0,
+            "max_tokens": 8,
+        },
+        {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 moto-ai-sidecar-health/1.0",
+            "HTTP-Referer": "https://localhost",
+            "X-Title": "moto AI Sidecar Health",
+        },
+    )
+    usage = data.get("usage", {})
+    return {"ok": usage.get("cost") == 0, "model": data.get("model"), "cost": usage.get("cost")}
+
+
+def check_groq() -> dict:
+    api_key = key("groq")
+    if not api_key:
+        return {"ok": False, "reason": "missing key"}
+    model = "qwen/qwen3-32b"
+    data = post_json(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+            "model": model,
+            "messages": [{"role": "user", "content": "/no_think\nReply with exactly OK."}],
+            "temperature": 0,
+            "max_tokens": 16,
+        },
+        {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 moto-ai-sidecar-health/1.0",
+        },
+    )
+    usage = data.get("usage", {})
+    return {"ok": True, "model": data.get("model") or model, "tokens": usage.get("total_tokens")}
+
+
+def check_nvidia() -> dict:
+    api_key = key("nvidia")
+    if not api_key:
+        return {"ok": False, "reason": "missing key"}
+    model = "nvidia/nemotron-3-nano-30b-a3b"
+    data = post_json(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        {
+            "model": model,
+            "messages": [{"role": "user", "content": "Reply with exactly OK."}],
+            "temperature": 0,
+            "max_tokens": 8,
+            "chat_template_kwargs": {"enable_thinking": False},
+        },
+        {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 moto-ai-sidecar-health/1.0",
+        },
+    )
+    usage = data.get("usage", {})
+    return {"ok": True, "model": data.get("model") or model, "tokens": usage.get("total_tokens")}
+
+
+CHECKS = {
+    "gemini": check_gemini,
+    "groq": check_groq,
+    "nvidia": check_nvidia,
+    "openrouter": check_openrouter,
+}
+
+
+def main() -> int:
+    results: dict[str, dict] = {}
+    exit_code = 0
+    for name, check in CHECKS.items():
+        try:
+            results[name] = check()
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            results[name] = {"ok": False, "http": exc.code, "reason": body[:500]}
+        except Exception as exc:
+            results[name] = {"ok": False, "reason": f"{type(exc).__name__}: {exc}"}
+        if not results[name].get("ok"):
+            exit_code = 1
+    print(json.dumps(results, indent=2, sort_keys=True))
+    return exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

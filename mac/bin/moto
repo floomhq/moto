@@ -173,8 +173,10 @@ cmd_doctor() {
   else die "cannot ssh $SSH_HOST — check ~/.ssh/config and firewall"; fi
 
   # 2. Reverse tunnel from server to Mac
+  local reverse_tunnel_alive=0
   if ssh_ax "ssh -o BatchMode=yes -o ConnectTimeout=3 mac 'echo ok' 2>/dev/null | grep -q ok"; then
     ok "reverse tunnel (server → mac) alive"
+    reverse_tunnel_alive=1
   else
     # shellcheck disable=SC2016  # $UID is literal advice for the user to type
     printf '%s⚠%s reverse tunnel DOWN. On Mac: launchctl kickstart -k gui/$UID/sh.buildingopen.moto.reverse-tunnel\n' "$c_yellow" "$c_reset"
@@ -191,9 +193,42 @@ cmd_doctor() {
   if command -v moto >/dev/null; then ok "moto in PATH ($(command -v moto))"
   else printf '%s⚠%s moto not in PATH\n' "$c_yellow" "$c_reset"; fi
 
+  # 4b. Low-cost sidecar commands + provider health
+  for cmd in ai-provider-key ai-sidecar ai-sidecar-health; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+      ok "$cmd in PATH ($(command -v "$cmd"))"
+    else
+      printf '%s⚠%s %s not in PATH. Run ./install.sh local after updating moto.\n' "$c_yellow" "$c_reset" "$cmd"
+    fi
+  done
+  if command -v ai-sidecar-health >/dev/null 2>&1; then
+    local sidecar_tmp
+    sidecar_tmp="$(mktemp)"
+    if ai-sidecar-health >"$sidecar_tmp" 2>&1; then
+      ok "local sidecar health"
+    else
+      printf '%s⚠%s local sidecar health failed or keys are missing:\n' "$c_yellow" "$c_reset"
+      sed 's/^/    /' "$sidecar_tmp"
+    fi
+    rm -f "$sidecar_tmp"
+  fi
+
+  if ssh_ax 'command -v ai-sidecar-health >/dev/null 2>&1' >/dev/null 2>&1; then
+    if ssh_ax 'ai-sidecar-health >/tmp/moto-sidecar-health.json 2>&1'; then
+      ok "server sidecar health"
+    else
+      printf '%s⚠%s server sidecar health failed or keys are missing:\n' "$c_yellow" "$c_reset"
+      ssh_ax 'sed "s/^/    /" /tmp/moto-sidecar-health.json 2>/dev/null | head -80' || true
+    fi
+  else
+    printf '%s⚠%s server sidecar commands not found. Run ./install.sh server on the remote box.\n' "$c_yellow" "$c_reset"
+  fi
+
   # 5. Mac sshd
   if sudo -n systemsetup -getremotelogin 2>/dev/null | grep -qi on; then
     ok "Mac Remote Login enabled"
+  elif [[ "$reverse_tunnel_alive" == "1" ]]; then
+    ok "Mac Remote Login reachable through reverse tunnel"
   else
     printf '%s⚠%s Mac Remote Login may be off (Settings → Sharing → Remote Login)\n' "$c_yellow" "$c_reset"
   fi

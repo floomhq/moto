@@ -46,6 +46,27 @@
 - Always use `timeout` for long tasks: `timeout 5m <command>`
 - Check for orphan processes: `pgrep -f "<your-heavy-processes>"`
 
+### Low-Cost AI Sidecars
+
+<!-- Customize: delete providers you do not use. Keep keys out of repos and shell startup files. -->
+
+Use sidecars only for bounded stateless text work. Claude Code remains the control plane and final authority for tool use, verification, security, architecture, and production decisions.
+
+| Task | Route |
+|------|-------|
+| Broad summaries, docs drafts, test planning | Gemini free / OAuth wrapper |
+| Single-file review, diff chunks, error logs | Groq |
+| Backup free route | OpenRouter free |
+| High-depth hosted reasoning and planning | NVIDIA `deepseek-ai/deepseek-v4-pro` |
+| Code-specific hosted second opinion | NVIDIA `qwen/qwen3-coder-480b-a35b-instruct` |
+| Private/offline bounded prompt on dev server | Local Ollama CPU model |
+
+Do not use a local CPU model as final authority for code correctness, security decisions, architecture calls, long open-ended generation, repo-wide analysis, or tasks requiring tools/browser/tests.
+
+Provider key storage pattern:
+- macOS: Keychain services such as `codex:GROQ_API_KEY`, `codex:NVIDIA_API_KEY`, `codex:OPENROUTER_API_KEY`
+- Linux dev server: `~/.config/ai-sidecar/keys.json` with directory mode `700` and file mode `600`
+
 ### Browser Automation
 
 <!-- Customize: if you use browser automation, describe your Chrome/CDP setup here -->

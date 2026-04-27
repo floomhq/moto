@@ -124,3 +124,31 @@ empty until you re-run `moto up` — but tmux state persists, so prior
 scrollback and the Claude CLI process come back cleanly *if* they were
 still alive before the reboot (they won't be, because the box rebooted —
 but the session *slots* are restored automatically when `./cs NAME` is re-run).
+
+### 8. Low-cost model sidecars
+
+The remote box can host a small local model and call hosted free/cheap models
+without turning them into the main agent. This keeps the architecture clean:
+Claude Code and Codex stay responsible for tool use, verification, and final
+judgment; sidecars handle narrow stateless text work.
+
+Recommended routes:
+
+| Sidecar | Use for | Avoid for |
+|---------|---------|-----------|
+| Gemini free / OAuth | broad summaries, docs drafts, test plans | secrets or private prompts unless your account setup allows it |
+| Groq | fast single-file review, diff chunks, error logs | final correctness calls |
+| OpenRouter free | backup free route | latency-sensitive work or stable model comparisons |
+| NVIDIA NIM | high-depth hosted reasoning and code-specific second opinions | tool use, secrets, unsanitized production decisions |
+| Local Ollama CPU | private/offline bounded prompts | long generation, repo-wide analysis, security, architecture, final code judgment |
+
+Key storage pattern:
+
+- Mac: provider keys in Keychain, for example `codex:GROQ_API_KEY` and
+  `codex:NVIDIA_API_KEY`
+- Linux remote: provider keys in `~/.config/ai-sidecar/keys.json`
+  with directory mode `700` and file mode `600`
+
+The local CPU model is intentionally advisory. Treat its output like a note from
+a junior reviewer: useful for extraction and second-pass checklists, never a
+replacement for tests, screenshots, builds, or a frontier-model review.

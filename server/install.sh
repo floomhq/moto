@@ -135,6 +135,9 @@ safe_install server/bin/cleanup-stale         /usr/local/bin/cleanup-stale
 safe_install server/bin/kill-claude-orphans   /usr/local/bin/kill-claude-orphans
 safe_install server/bin/node-modules-gc       /usr/local/bin/node-modules-gc
 safe_install server/bin/moto-reboot-recovery  /usr/local/bin/moto-reboot-recovery
+safe_install claude/scripts/ai-provider-key   /usr/local/bin/ai-provider-key
+safe_install claude/scripts/ai-sidecar        /usr/local/bin/ai-sidecar
+safe_install claude/scripts/ai-sidecar-health /usr/local/bin/ai-sidecar-health
 
 # Authenticated-chrome helpers
 install -d /root/authenticated-browser
