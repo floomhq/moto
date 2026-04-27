@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # ~/.bashrc - Generic template for Claude Code dev server
 #
 # Sanitized from a production dev server setup.

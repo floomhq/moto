@@ -13,7 +13,7 @@ jobs:
       - name: Run shellcheck
         uses: ludeeus/action-shellcheck@master
         with:
-          severity: warning
+          severity: error
           scandir: '.'
           ignore_paths: >-
             node_modules
