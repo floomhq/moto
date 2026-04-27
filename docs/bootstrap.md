@@ -15,7 +15,7 @@ and Ubuntu 22.04+.
 ## 1. Clone on your Mac
 
 ```bash
-git clone https://github.com/buildingopen/moto.git ~/moto
+git clone https://github.com/floomhq/moto.git ~/moto
 cd ~/moto
 cp .env.example .env
 $EDITOR .env

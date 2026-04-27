@@ -5,9 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-compatible-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 
-`moto` is a hacked-together but production-tested terminal IDE for AI agents: Claude as the control plane, Codex for backend/infra/debugging, opencode as an optional worker, subagent workflows, Docker-first runtime, CLAUDE.md / AGENTS.md-style context, safety hooks, 60+ skills, Gmail/WhatsApp integrations, memory, browser automation, and cost tracking.
+`moto` is Floom's hacked-together but production-tested terminal IDE for AI agents: Claude as the control plane, Codex for backend/infra/debugging, opencode as an optional worker, subagent workflows, Docker-first runtime, CLAUDE.md / AGENTS.md-style context, safety hooks, 60+ skills, Gmail/WhatsApp integrations, memory, browser automation, and cost tracking.
 
-This repo was formerly `buildingopen/claude-setup`. The old GitHub URL is kept for backwards compatibility through GitHub redirects after the rename.
+This repo was formerly `buildingopen/moto` and, before that, `buildingopen/claude-setup`. The old GitHub URLs are kept for backwards compatibility through GitHub redirects after the move.
 
 ---
 
@@ -58,7 +58,7 @@ The philosophy is simple:
 ## Quick Start
 
 ```bash
-git clone https://github.com/buildingopen/moto.git
+git clone https://github.com/floomhq/moto.git
 cd moto
 ./install.sh          # Symlinks configs into ~/.claude/
 ```

@@ -1,7 +1,7 @@
 [Unit]
 Description=moto — tmux persistent server (OOM-immune)
 After=network.target
-Documentation=https://github.com/buildingopen/moto
+Documentation=https://github.com/floomhq/moto
 
 [Service]
 Type=forking
