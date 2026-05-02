@@ -2,6 +2,14 @@
 
 Self-hosted WhatsApp Web gateway using [OpenClaw](https://github.com/buildingopen/openclaw-setup), running in Docker.
 
+<p align="center">
+  <img src="../assets/demos/whatsapp-setup.gif" alt="WhatsApp setup demo" width="720">
+  <br>
+  <em>Demo: link WhatsApp, verify a contact, and send safely in 20 seconds.</em>
+</p>
+
+> 🎬 Don't have the GIF yet? Run `docs/demos/record.sh whatsapp` to generate it from the reproducible script.
+
 ## Architecture
 
 - **OpenClaw**: open-source WhatsApp Web gateway (Node.js, runs in Docker)
