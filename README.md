@@ -10,9 +10,9 @@
 This repo was formerly `buildingopen/moto` and, before that, `buildingopen/claude-setup`. The old GitHub URLs redirect here automatically.
 
 <p align="center">
-  <img src="assets/demos/hero.gif" alt="moto demo" width="800">
+  <img src="assets/hook-demo.gif" alt="fstack hook demo" width="800">
   <br>
-  <em>Demo: moto new → iTerm tabs → remote session → Claude in context</em>
+  <em>A safety hook firing on a destructive command. Hero GIF coming soon.</em>
 </p>
 
 ---
