@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .box { fill: #161b22; stroke: #30363d; stroke-width: 1.5; }
+      .accent { fill: #58a6ff; }
+      .text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #c9d1d9; }
+      .label { font-size: 11px; fill: #8b949e; }
+      .title { font-size: 15px; fill: #f0f6fc; font-weight: 600; }
+      .arrow { stroke: #30363d; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+      .dashed { stroke-dasharray: 4 3; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#30363d"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="960" height="520" rx="8"/>
+
+  <!-- Mac -->
+  <rect class="box" x="40" y="40" width="280" height="440" rx="6"/>
+  <text class="title" x="80" y="68">Mac (local)</text>
+
+  <rect class="box" x="60" y="85" width="240" height="40" rx="4"/>
+  <text class="text" x="75" y="110">iTerm + moto CLI</text>
+
+  <rect class="box" x="60" y="140" width="240" height="40" rx="4"/>
+  <text class="text" x="75" y="165">Claude Code (control plane)</text>
+
+  <rect class="box" x="60" y="195" width="240" height="40" rx="4"/>
+  <text class="text" x="75" y="220">CLAUDE.md / AGENTS.md</text>
+
+  <rect class="box" x="60" y="250" width="240" height="40" rx="4"/>
+  <text class="text" x="75" y="275">Hooks + Skills (60+)</text>
+
+  <rect class="box" x="60" y="305" width="240" height="40" rx="4"/>
+  <text class="text" x="75" y="330">Memory (MEMORY.md)</text>
+
+  <rect class="box" x="60" y="360" width="240" height="40" rx="4"/>
+  <text class="text" x="75" y="385">Browser automation (CDP)</text>
+
+  <rect class="box" x="60" y="415" width="240" height="40" rx="4"/>
+  <text class="text" x="75" y="440">WhatsApp / Gmail</text>
+
+  <!-- Remote Box -->
+  <rect class="box" x="640" y="40" width="280" height="440" rx="6"/>
+  <text class="title" x="680" y="68">Remote Box (AX41)</text>
+
+  <rect class="box" x="660" y="85" width="240" height="40" rx="4"/>
+  <text class="text" x="675" y="110">tmux sessions</text>
+
+  <rect class="box" x="660" y="140" width="240" height="40" rx="4"/>
+  <text class="text" x="675" y="165">Codex / opencode workers</text>
+
+  <rect class="box" x="660" y="195" width="240" height="40" rx="4"/>
+  <text class="text" x="675" y="220">Docker runtime</text>
+
+  <rect class="box" x="660" y="250" width="240" height="40" rx="4"/>
+  <text class="text" x="675" y="275">Chrome headless (CDP)</text>
+
+  <rect class="box" x="660" y="305" width="240" height="40" rx="4"/>
+  <text class="text" x="675" y="330">Sidecars (Groq / Gemini / NV)</text>
+
+  <rect class="box" x="660" y="360" width="240" height="40" rx="4"/>
+  <text class="text" x="675" y="385">SSHFS mounts</text>
+
+  <rect class="box" x="660" y="415" width="240" height="40" rx="4"/>
+  <text class="text" x="675" y="440">Systemd services</text>
+
+  <!-- Connections -->
+  <path class="arrow" d="M300 105 L640 105"/>
+  <text class="label" x="430" y="95">SSH + reverse tunnel</text>
+
+  <path class="arrow dashed" d="M300 380 L640 270"/>
+  <text class="label" x="420" y="340">SSHFS / file sync</text>
+
+  <path class="arrow" d="M300 165 L640 155"/>
+  <text class="label" x="430" y="145">Agent dispatch</text>
+
+  <path class="arrow dashed" d="M300 220 L640 220"/>
+  <text class="label" x="430" y="210">Context shared via files</text>
+
+  <!-- Center label -->
+  <rect class="box" x="390" y="240" width="180" height="40" rx="4"/>
+  <text class="text" x="405" y="265">moto orchestrates</text>
+</svg>
