@@ -19,18 +19,19 @@ fi
 [[ -n "${AX41_HOST:-}" ]] || { echo "❌ AX41_HOST not set. Copy .env.example to .env or export AX41_HOST=..." ; exit 1; }
 [[ -n "${AX41_USER:-}" ]] || { echo "❌ AX41_USER not set. Copy .env.example to .env or export AX41_USER=..." ; exit 1; }
 
-echo "━━━ moto Mac install ━━━"
+echo "━━━ fstack Mac install ━━━"
 echo "  AX41:            $AX41_USER@$AX41_HOST"
 echo "  SSH alias:       $AX41_SSH_HOST"
 echo "  Reverse port:    $MAC_REVERSE_PORT"
 echo
 
-BIN_DIR="${MOTO_BIN_DIR:-${CLAUDE_REMOTE_BIN_DIR:-$HOME/.local/bin}}"
+BIN_DIR="${FSTACK_BIN_DIR:-${MOTO_BIN_DIR:-${CLAUDE_REMOTE_BIN_DIR:-$HOME/.local/bin}}}"
 mkdir -p "$BIN_DIR"
 ln -sf "$REPO_DIR/mac/bin/moto" "$BIN_DIR/moto"
+ln -sf "$REPO_DIR/mac/bin/moto" "$BIN_DIR/fstack"
 ln -sf "$REPO_DIR/mac/bin/moto" "$BIN_DIR/mt"
 ln -sf "$REPO_DIR/mac/bin/claude-tabs" "$BIN_DIR/claude-tabs"
-echo "✓ linked moto, mt, and claude-tabs to $BIN_DIR"
+echo "✓ linked fstack, legacy alias, mt, and claude-tabs to $BIN_DIR"
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
   *) echo "  ⚠ add $BIN_DIR to PATH in your shell profile" ;;
@@ -43,14 +44,14 @@ for f in "$REPO_DIR"/mac/shell/*.zsh; do
 done
 echo "✓ linked shell functions into $ZSH_D"
 
-if ! grep -q 'MOTO:zshrc.d' "$HOME/.zshrc" 2>/dev/null; then
+if ! grep -Eq 'MOTO:zshrc\.d|FSTACK:zshrc\.d' "$HOME/.zshrc" 2>/dev/null; then
   cat >> "$HOME/.zshrc" <<'EOF'
 
-# MOTO:zshrc.d — load remote-agent shell functions
-for _moto_f in "$HOME"/.zshrc.d/*.zsh(N); do
-  [[ -r "$_moto_f" ]] && source "$_moto_f"
+# FSTACK:zshrc.d — load remote-agent shell functions
+for _fstack_f in "$HOME"/.zshrc.d/*.zsh(N); do
+  [[ -r "$_fstack_f" ]] && source "$_fstack_f"
 done
-unset _moto_f
+unset _fstack_f
 EOF
   echo "✓ added loader stanza to ~/.zshrc"
 fi
@@ -63,7 +64,7 @@ mkdir -p "$HOME/.ssh/sockets"
 if ! grep -q "^Host $AX41_SSH_HOST$" "$SSH_CONFIG"; then
   {
     echo ""
-    echo "# ── moto remote-agent host ─────────────────────"
+    echo "# ── fstack remote-agent host ───────────────────"
     sed -e "s|__AX41_HOST__|$AX41_HOST|g" \
         -e "s|__AX41_USER__|$AX41_USER|g" \
         -e "s|__AX41_SSH_KEY__|${AX41_SSH_KEY:-~/.ssh/id_ed25519}|g" \
@@ -96,4 +97,4 @@ fi
 
 echo
 echo "✓ integrated remote workflow installed on Mac."
-echo "  Next: source ~/.zshrc && moto doctor"
+echo "  Next: source ~/.zshrc && fstack doctor"

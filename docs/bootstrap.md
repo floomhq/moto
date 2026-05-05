@@ -15,8 +15,8 @@ and Ubuntu 22.04+.
 ## 1. Clone on your Mac
 
 ```bash
-git clone https://github.com/floomhq/moto.git ~/moto
-cd ~/moto
+git clone https://github.com/floomhq/fstack.git ~/fstack
+cd ~/fstack
 cp .env.example .env
 $EDITOR .env
 ```
@@ -34,7 +34,7 @@ Fill in at minimum:
 ./install.sh mac
 ```
 
-This installs the local `~/.claude` config, adds `~/.local/bin/moto`, sources
+This installs the local `~/.claude` config, adds `~/.local/bin/fstack`, sources
 shell functions into `~/.zshrc`, adds a `Host ax41` block to `~/.ssh/config`,
 and loads the launchd agent for the reverse tunnel.
 
@@ -62,7 +62,7 @@ If the installer printed a new public key, add it to your Mac's
 
 ```bash
 # On the Mac:
-echo 'ssh-ed25519 AAAA... moto-server-hostname' >> ~/.ssh/authorized_keys
+echo 'ssh-ed25519 AAAA... fstack-server-hostname' >> ~/.ssh/authorized_keys
 ```
 
 ## 4. Kick the reverse tunnel
@@ -79,11 +79,11 @@ ssh ax41 'ssh mac hostname'
 # → prints your Mac's hostname
 ```
 
-## 5. Run `moto doctor`
+## 5. Run `fstack doctor`
 
 ```bash
 # On the Mac:
-moto doctor
+fstack doctor
 ```
 
 Every check turns green when the setup is healthy. If `reverse tunnel` is down, the SSH server on
@@ -93,11 +93,11 @@ the server's key.
 ## 6. Create your first session
 
 ```bash
-moto new hello/world
+fstack new hello/world
 # → iTerm opens a new tab with Claude Code running on the server.
 ```
 
-From now on, `moto up` will always restore your full set of sessions into one
+From now on, `fstack up` will always restore your full set of sessions into one
 iTerm window.
 
 ## 7. (Optional) Browser login

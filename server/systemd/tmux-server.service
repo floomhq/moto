@@ -1,7 +1,7 @@
 [Unit]
-Description=moto — tmux persistent server (OOM-immune)
+Description=fstack — tmux persistent server (OOM-immune)
 After=network.target
-Documentation=https://github.com/floomhq/moto
+Documentation=https://github.com/floomhq/fstack
 
 [Service]
 Type=forking

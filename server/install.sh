@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# moto server installer (run on Linux as root)
+# fstack server installer (run on Linux as root)
 set -euo pipefail
 
 [[ "$EUID" -ne 0 ]] && { echo "❌ run as root (sudo -i)"; exit 1; }
 
 MOTO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RUNTIME_DIR="${MOTO_RUNTIME_DIR:-/opt/moto}"
+RUNTIME_DIR="${FSTACK_RUNTIME_DIR:-${MOTO_RUNTIME_DIR:-/opt/moto}}"
 cd "$MOTO_DIR"
 
 if [[ ! -f .env ]]; then
@@ -28,7 +28,7 @@ set -a; source .env; set +a
 : "${SKIP_DOCKER_COMPOSE:=0}"
 : "${SKIP_SYSTEMD_ENABLE:=0}"
 
-echo "━━━ moto server install ━━━"
+echo "━━━ fstack server install ━━━"
 echo "  checkout dir:           $MOTO_DIR"
 echo "  runtime dir:            $RUNTIME_DIR"
 echo "  mac user:              $MAC_USER"
@@ -45,7 +45,7 @@ if [[ "$MOTO_DIR" != "$RUNTIME_DIR" ]]; then
     current_runtime="$(readlink -f "$RUNTIME_DIR" 2>/dev/null || true)"
     if [[ "$current_runtime" != "$MOTO_DIR" ]]; then
       echo "❌ $RUNTIME_DIR already exists and is not this checkout"
-      echo "   move it aside or rerun with MOTO_RUNTIME_DIR pointing elsewhere"
+      echo "   move it aside or rerun with FSTACK_RUNTIME_DIR pointing elsewhere"
       exit 1
     fi
   fi
@@ -103,7 +103,7 @@ fi
 
 # ── 4. Install bin scripts (safe: preserve local overrides) ─────────
 # Preserve any existing file at the target that is marked with `MOTO_KEEP_LOCAL`
-# or that predates moto and differs from the repo version. Pass --force to
+# or that predates fstack and differs from the repo version. Pass --force to
 # overwrite unconditionally.
 FORCE="${FORCE:-0}"
 [[ "${1:-}" == "--force" ]] && FORCE=1
@@ -117,8 +117,8 @@ safe_install() {
     fi
     if ! cmp -s "$src" "$dst"; then
       echo "  ⚠ $dst already exists and differs from repo version"
-      echo "    backup:  $dst → $dst.pre-moto.$(date +%s)"
-      cp -a "$dst" "$dst.pre-moto.$(date +%s)"
+      echo "    backup:  $dst → $dst.pre-fstack.$(date +%s)"
+      cp -a "$dst" "$dst.pre-fstack.$(date +%s)"
     fi
   fi
   install -m 0755 "$src" "$dst"
@@ -145,7 +145,7 @@ safe_install server/browser/chrome-launcher.sh /root/authenticated-browser/chrom
 safe_install server/browser/vnc-login.sh       /root/authenticated-browser/vnc-login.sh
 safe_install server/browser/backup-profile.sh  /root/authenticated-browser/backup-profile.sh
 
-# /root/images for moto img
+# /root/images for fstack img
 install -d /root/images
 
 # ── 5. Mac SSH config on server (Host mac → localhost:$MAC_REVERSE_PORT) ──
@@ -168,7 +168,7 @@ fi
 
 # Generate key if missing and tell user to add it on the Mac
 if [[ ! -f /root/.ssh/id_ed25519 ]]; then
-  ssh-keygen -t ed25519 -N "" -f /root/.ssh/id_ed25519 -C "moto-server-$(hostname)"
+  ssh-keygen -t ed25519 -N "" -f /root/.ssh/id_ed25519 -C "fstack-server-$(hostname)"
   echo
   echo "⚠  NEW SSH KEY GENERATED. Add this to ~/.ssh/authorized_keys on your Mac:"
   echo
@@ -191,7 +191,7 @@ for unit in server/systemd/*.service server/systemd/*.timer; do
   dst="/etc/systemd/system/$(basename "$unit")"
   if [[ -e "$dst" ]] && [[ "$FORCE" != "1" ]] && ! cmp -s "$unit" "$dst"; then
     echo "  ⚠ $dst differs from repo — backing up"
-    cp -a "$dst" "$dst.pre-moto.$(date +%s)"
+    cp -a "$dst" "$dst.pre-fstack.$(date +%s)"
   fi
   cp "$unit" "$dst"
 done
@@ -242,7 +242,7 @@ for port in "${!want_ports[@]}"; do
 done
 if (( conflicts > 0 )) && [[ "$FORCE" != "1" ]]; then
   echo
-  echo "  ⚠ $conflicts port(s) already bound. moto containers would fail to start."
+      echo "  ⚠ $conflicts port(s) already bound. fstack containers would fail to start."
   echo "    Options:"
   echo "      1. Stop the conflicting services on those ports"
   echo "      2. Edit server/docker/compose.yaml to use different host ports"
@@ -265,14 +265,14 @@ else
 fi
 
 echo
-echo "✓ moto server install complete."
+echo "✓ fstack server install complete."
 echo
 echo "Next steps:"
 echo "  1. If a new SSH key was shown above, add it to your Mac's ~/.ssh/authorized_keys"
 echo "  2. On your Mac, run: launchctl kickstart -k gui/\$UID/sh.buildingopen.moto.reverse-tunnel"
 echo "  3. Test: ssh mac 'hostname' (from this server)"
 echo "  4. Install the agent CLIs you plan to use:"
-echo "       npm i -g @anthropic-ai/claude-code && claude /login   # for moto new"
-echo "       npm i -g @openai/codex                                # for moto newx"
-echo "       npm i -g opencode                                     # for moto newo"
-echo "  5. moto doctor (from your Mac)"
+echo "       npm i -g @anthropic-ai/claude-code && claude /login   # for fstack new"
+echo "       npm i -g @openai/codex                                # for fstack newx"
+echo "       npm i -g opencode                                     # for fstack newo"
+echo "  5. fstack doctor (from your Mac)"

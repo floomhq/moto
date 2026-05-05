@@ -8,7 +8,7 @@ This directory contains the Mac-side control plane for the integrated remote wor
 
 ## What ships here
 
-- `bin/moto` - primary CLI for opening, restoring, diagnosing, and managing remote sessions
+- `fstack` - primary installed CLI for opening, restoring, diagnosing, and managing remote sessions
 - `bin/claude-tabs` - compatibility wrapper for the older tab-only command surface
 - `install.sh` - links the CLIs into `~/.local/bin`, installs zsh aliases, SSH config, and the reverse-tunnel launchd agent
 - `shell/*.zsh` - `ax`, `axc`, `axo`, `axk`, `axl`, and related helpers
@@ -37,7 +37,7 @@ At minimum, set:
 Optional:
 
 - `AX41_SSH_HOST=ax41`
-- `MOTO_BIN_DIR=$HOME/.local/bin`
+- `FSTACK_BIN_DIR=$HOME/.local/bin`
 - `MAC_REVERSE_PORT=2222`
 
 ## Usage
@@ -55,13 +55,13 @@ axk project/task     # kill one remote session
 Direct CLI usage:
 
 ```bash
-moto new project/task
-moto newx project/task
-moto newo project/task
-moto up
-moto ls
-moto kill project/task
-moto doctor
+fstack new project/task
+fstack newx project/task
+fstack newo project/task
+fstack up
+fstack ls
+fstack kill project/task
+fstack doctor
 ```
 
 Compatibility:

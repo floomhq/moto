@@ -17,11 +17,12 @@ fi
 export DISPLAY=:98
 export TZ="${TZ:-Europe/Berlin}"
 
-# Optional: route Chrome through proxy (set PROXY_URL in /opt/moto/.env).
+# Optional: route Chrome through proxy (set PROXY_URL in the runtime .env).
 PROXY_ARG=()
-if [[ -f /opt/moto/.env ]]; then
+RUNTIME_ENV="${FSTACK_RUNTIME_DIR:-${MOTO_RUNTIME_DIR:-/opt/moto}}/.env"
+if [[ -f "$RUNTIME_ENV" ]]; then
   # shellcheck disable=SC1091
-  source /opt/moto/.env
+  source "$RUNTIME_ENV"
 fi
 if [[ -n "${PROXY_URL:-}" ]] && [[ ",${PROXY_APPLIES_TO:-}," == *",authenticated-chrome,"* ]]; then
   PROXY_ARG=(--proxy-server="$PROXY_URL")

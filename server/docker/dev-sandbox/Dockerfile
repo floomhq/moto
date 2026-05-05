@@ -1,4 +1,4 @@
-# moto — dev-sandbox
+# fstack — dev-sandbox
 # sshd + node + python + git. SSH in from your Mac:
 #   ssh -p 2223 root@<AX41_HOST>
 # Intended as an isolated playground for experiments that might trash the host.

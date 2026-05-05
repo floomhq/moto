@@ -1,5 +1,5 @@
 [Unit]
-Description=moto — restore full stack after reboot
+Description=fstack — restore full stack after reboot
 After=network-online.target docker.service tmux-server.service
 Wants=network-online.target docker.service
 Before=authenticated-chrome.service
