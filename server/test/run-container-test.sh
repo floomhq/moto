@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# moto — orchestrates an isolated container test on the server.
+# fstack — orchestrates an isolated container test on the server.
 #
 # Runs from your Mac: syncs the repo to the server, spins up a fresh
 # debian:12 container, executes server/install.sh inside it with test
@@ -20,10 +20,10 @@ if [[ -z "$HOST" ]] && [[ -f .env ]]; then
 fi
 : "${HOST:?set HOST=... or AX41_HOST in .env}"
 
-TEST_DIR="/tmp/moto-test-$(date +%s)"
-CNAME="moto-test-$$"
+TEST_DIR="/tmp/fstack-test-$(date +%s)"
+CNAME="fstack-test-$$"
 
-echo "━━━ moto isolated container test ━━━"
+echo "━━━ fstack isolated container test ━━━"
 echo "  host:      $HOST"
 echo "  test dir:  $TEST_DIR"
 echo "  container: $CNAME"
@@ -62,8 +62,8 @@ SSHEOF
 rc=$?
 echo
 if [[ $rc -eq 0 ]]; then
-  echo "✓ moto container test PASSED"
+  echo "✓ fstack container test PASSED"
 else
-  echo "✗ moto container test FAILED (exit $rc)"
+  echo "✗ fstack container test FAILED (exit $rc)"
 fi
 exit $rc

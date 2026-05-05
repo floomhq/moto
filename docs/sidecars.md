@@ -1,6 +1,6 @@
 # Low-Cost AI Sidecars
 
-`moto` treats frontier agents as the control plane and routes bounded text work to cheaper sidecars. The goal is simple: spend premium model budget on judgment, orchestration, debugging, architecture, and final review; use cheaper/free models for narrow stateless work.
+`fstack` treats frontier agents as the control plane and routes bounded text work to cheaper sidecars. The goal is simple: spend premium model budget on judgment, orchestration, debugging, architecture, and final review; use cheaper/free models for narrow stateless work.
 
 ## Routing
 

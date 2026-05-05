@@ -3,12 +3,12 @@ set -euo pipefail
 
 # Record a reproducible terminal demo using asciinema + agg
 # Usage: ./docs/demos/record.sh <feature>
-#   feature = whatsapp | install | moto-cli | hook-block | skills | memory | server | sidecar
+#   feature = whatsapp | install | fstack-cli | hook-block | skills | memory | server | sidecar
 
 FEATURE="${1:-}"
 DEMO_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$DEMO_DIR/../.." && pwd)"
-CAST_DIR="/tmp/moto-demos"
+CAST_DIR="/tmp/fstack-demos"
 mkdir -p "$CAST_DIR"
 
 if [[ -z "$FEATURE" ]]; then
@@ -31,7 +31,7 @@ fi
 command -v asciinema >/dev/null 2>&1 || { echo "Install asciinema first: brew install asciinema"; exit 1; }
 
 echo "Recording $FEATURE → $CAST_FILE"
-asciinema rec "$CAST_FILE" --command "bash $DEMO_SCRIPT" --title "moto: $FEATURE"
+asciinema rec "$CAST_FILE" --command "bash $DEMO_SCRIPT" --title "fstack: $FEATURE"
 
 if command -v agg >/dev/null 2>&1; then
   mkdir -p "$(dirname "$GIF_FILE")"

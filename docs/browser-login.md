@@ -50,7 +50,7 @@ ssh ax41 'bash /root/authenticated-browser/vnc-login.sh stop'
 
 ## 6. Use it from agents
 
-From any Docker container on the moto network, Chrome is reachable at:
+From any Docker container on the fstack network, Chrome is reachable at:
 
 ```
 ws://172.17.0.1:9222/devtools/browser

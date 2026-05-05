@@ -6,7 +6,7 @@ This repo is powerful but dense. Every major feature should have a 10–30 secon
 
 `assets/demos/hero.gif` — the full 30-second pitch:
 ```
-moto new myproj/feature
+fstack new myproj/feature
 # → iTerm spawns 4 tabs
 # → SSH to remote
 # → tmux session attaches
@@ -18,12 +18,12 @@ moto new myproj/feature
 | Feature | Target file | What to record |
 |---------|-------------|----------------|
 | **WhatsApp setup** | `assets/demos/whatsapp-setup.gif` | `clawdbot-ctl login` → QR code → phone scan → `safe-wa-send "Name" "test"` → verify output → `--confirmed` send |
-| **Install** | `assets/demos/install.gif` | `git clone … && cd moto && ./install.sh` → hooks installed → skills symlinked |
+| **Install** | `assets/demos/install.gif` | `git clone … && cd fstack && ./install.sh` → hooks installed → skills symlinked |
 | **Safety hook block** | `assets/demos/hook-block.gif` | Claude tries `rm -rf /` → hook intercepts → red error |
-| **moto CLI** | `assets/demos/moto-cli.gif` | `moto ls` → `moto new proj` → `moto up` → tabs restore |
+| **fstack CLI** | `assets/demos/fstack-cli.gif` | `fstack ls` → `fstack new proj` → `fstack up` → tabs restore |
 | **Skills** | `assets/demos/skills.gif` | `/cost` → `/bouncer` → `/qa` in a Claude session |
 | **Memory** | `assets/demos/memory.gif` | Claude updates `MEMORY.md` → next session recalls preference |
-| **Server bootstrap** | `assets/demos/server.gif` | `./install.sh server-remote` → systemd units → `moto doctor` |
+| **Server bootstrap** | `assets/demos/server.gif` | `./install.sh server-remote` → systemd units → `fstack doctor` |
 | **Sidecar** | `assets/demos/sidecar.gif` | `ai-sidecar --provider groq --prompt "review this diff"` |
 
 ## Recording workflow

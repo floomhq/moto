@@ -1,5 +1,5 @@
 [Unit]
-Description=moto — CDP Docker bridge (socat :9222 host -> 172.17.0.1:9222)
+Description=fstack — CDP Docker bridge (socat :9222 host -> 172.17.0.1:9222)
 After=authenticated-chrome.service docker.service
 
 [Service]

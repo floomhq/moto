@@ -1,5 +1,5 @@
 {
-  "name": "moto-runtime-api",
+  "name": "fstack-runtime-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",

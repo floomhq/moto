@@ -4,7 +4,7 @@ Why: many services (Google sign-in, LinkedIn, Zomato, Instagram) flag or block
 data-center IPs. Routing agent traffic through a residential IP makes you look
 like a normal user.
 
-## How moto does it
+## How fstack does it
 
 `server/docker/compose.yaml` includes an optional `proxy` service (tinyproxy,
 built locally from `server/docker/proxy/`) under the `proxy` profile. It:

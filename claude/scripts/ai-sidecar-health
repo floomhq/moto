@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Health check for moto low-cost AI sidecars."""
+"""Health check for fstack low-cost AI sidecars."""
 
 from __future__ import annotations
 
@@ -98,9 +98,9 @@ def check_openrouter() -> dict:
         {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 moto-ai-sidecar-health/1.0",
+            "User-Agent": "Mozilla/5.0 fstack-ai-sidecar-health/1.0",
             "HTTP-Referer": "https://localhost",
-            "X-Title": "moto AI Sidecar Health",
+            "X-Title": "fstack AI Sidecar Health",
         },
     )
     usage = data.get("usage", {})
@@ -123,7 +123,7 @@ def check_groq() -> dict:
         {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 moto-ai-sidecar-health/1.0",
+            "User-Agent": "Mozilla/5.0 fstack-ai-sidecar-health/1.0",
         },
     )
     usage = data.get("usage", {})
@@ -147,7 +147,7 @@ def check_nvidia() -> dict:
         {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 moto-ai-sidecar-health/1.0",
+            "User-Agent": "Mozilla/5.0 fstack-ai-sidecar-health/1.0",
         },
     )
     usage = data.get("usage", {})

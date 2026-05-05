@@ -1,4 +1,4 @@
-# moto — container-based tests
+# fstack — container-based tests
 
 Two isolated tests that run on the server **without touching the host**.
 
@@ -7,7 +7,7 @@ Two isolated tests that run on the server **without touching the host**.
 Runs `server/install.sh` end-to-end inside a throwaway `debian:12` container. Proves that a cold install actually works on a clean box.
 
 ```bash
-cd moto
+cd fstack
 HOST=ax41 ./server/test/run-container-test.sh
 ```
 
@@ -22,7 +22,7 @@ Builds `server/docker/proxy/` (tinyproxy) and proves:
 3. Chained `PROXY_URL` pointing at a second tinyproxy → **the parent's own logs confirm the forwarded request**. This is strict proof that the upstream directive is actually engaged, not just that curl got a 200.
 
 ```bash
-cd moto
+cd fstack
 HOST=ax41 ./server/test/proxy-smoke.sh
 ```
 
@@ -64,7 +64,7 @@ Verification phases:
 ━━━ summary ━━━
   pass: 50
   fail: 0
-✓ moto container test PASSED
+✓ fstack container test PASSED
 ```
 
 Tested on: Hetzner AX41 (Ubuntu 24.04 host, Debian 12 container), Docker 28.2.2, x86_64.
@@ -76,7 +76,7 @@ Tested on: Hetzner AX41 (Ubuntu 24.04 host, Debian 12 container), Docker 28.2.2,
 - **Mac reverse tunnel / SSHFS mount** — requires an actual Mac online.
 - **Chrome + Xvfb actually rendering** — requires a live X server, out of scope for a static install test.
 
-For those, `moto doctor` (run from your Mac, after `moto up`) is the runtime health check.
+For those, `fstack doctor` (run from your Mac, after `fstack up`) is the runtime health check.
 
 ## Running standalone (inside an already-started container)
 

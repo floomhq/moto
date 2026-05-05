@@ -1,5 +1,5 @@
 [Unit]
-Description=moto — check and remount stale Mac SSHFS mounts
+Description=fstack — check and remount stale Mac SSHFS mounts
 After=network-online.target
 
 [Service]

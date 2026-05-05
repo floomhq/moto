@@ -1,5 +1,5 @@
 [Unit]
-Description=moto — Chrome CDP keepalive
+Description=fstack — Chrome CDP keepalive
 After=authenticated-chrome.service
 Wants=authenticated-chrome.service
 

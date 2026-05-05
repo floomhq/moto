@@ -132,10 +132,10 @@ def call_provider(provider: str, model: str, prompt: str, max_tokens: int, timeo
     headers = {
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 moto-ai-sidecar/1.0",
+        "User-Agent": "Mozilla/5.0 fstack-ai-sidecar/1.0",
     }
     if provider == "openrouter":
-        headers.update({"HTTP-Referer": "https://localhost", "X-Title": "moto AI Sidecar"})
+        headers.update({"HTTP-Referer": "https://localhost", "X-Title": "fstack AI Sidecar"})
 
     request = urllib.request.Request(
         cfg["url"],

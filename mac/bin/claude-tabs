@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# claude-tabs - compatibility wrapper around the integrated moto CLI
+# claude-tabs - compatibility wrapper around the integrated fstack CLI
 #
 # Usage:
 #   claude-tabs up
@@ -16,7 +16,7 @@ REPO_DIR="$(cd "$(dirname "$SELF_BIN")/../.." && pwd)"
 MOTO_BIN="$REPO_DIR/mac/bin/moto"
 
 if [[ ! -x "$MOTO_BIN" ]]; then
-    echo "claude-tabs: could not find moto at $MOTO_BIN" >&2
+    echo "claude-tabs: could not find fstack command target at $MOTO_BIN" >&2
     exit 1
 fi
 
