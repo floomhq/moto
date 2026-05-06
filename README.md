@@ -85,11 +85,64 @@ $EDITOR .env
 
 ## Architecture
 
-<p align="center">
-  <img src="assets/architecture.svg" alt="fstack architecture" width="800">
-</p>
+`fstack` splits agent work between a Mac control plane and a remote Linux runtime. The Mac stays where the human works, while the server owns long-running sessions, containers, cheap sidecar calls, browser automation, and messaging integrations.
 
-`fstack` treats your Mac as the control plane and a remote Linux box as the runtime. Claude Code orchestrates; Codex/opencode handle heavy lifting; Docker sandboxes risky work; sidecars review cheaply; hooks enforce safety at every tool call.
+```mermaid
+flowchart LR
+  subgraph Mac["Mac control plane"]
+    IDE["IDE + terminal"]
+    Claude["Claude Code"]
+    Codex["Codex backend/debug"]
+    Browser["Local browser"]
+  end
+
+  subgraph Link["Connection layer"]
+    SSHFS["SSHFS"]
+    Systemd["systemd"]
+    Tunnels["SSH tunnels"]
+  end
+
+  subgraph Linux["Remote Linux runtime"]
+    Tmux["tmux sessions"]
+    Docker["Docker containers"]
+    CDP["Chrome CDP"]
+    Messaging["WhatsApp + Gmail"]
+  end
+
+  subgraph Surfaces["Agent surfaces"]
+    Skills["60+ skills"]
+    Hooks["17 safety hooks"]
+    Memory["MEMORY.md"]
+    Slash["slash commands"]
+  end
+
+  subgraph Sidecars["Stateless sidecars"]
+    Groq["Groq"]
+    Nvidia["NVIDIA"]
+    Gemini["Gemini"]
+  end
+
+  IDE --> Claude
+  Claude --> Codex
+  Browser --> Claude
+  Claude --> SSHFS
+  Claude --> Systemd
+  Claude --> Tunnels
+  SSHFS --> Tmux
+  Systemd --> Tmux
+  Tunnels --> Tmux
+  Tmux --> Docker
+  Tmux --> CDP
+  Tmux --> Messaging
+  Claude --> Skills
+  Hooks --> Claude
+  Memory --> Claude
+  Slash --> Claude
+  Skills --> Tmux
+  Tmux --> Groq
+  Tmux --> Nvidia
+  Tmux --> Gemini
+```
 
 Read the deep dive: [`docs/architecture.md`](docs/architecture.md)
 
