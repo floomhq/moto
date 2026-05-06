@@ -10,9 +10,9 @@
 Formerly floomhq/moto and earlier buildingopen/moto. Old GitHub URLs redirect.
 
 <p align="center">
-  <img src="assets/hook-demo.gif" alt="fstack hook demo" width="800">
+  <img src="assets/hero.gif" alt="fstack hook demo" width="800">
   <br>
-  <em>A safety hook firing on a destructive command. Hero GIF coming soon.</em>
+  <em>A safety hook firing on a destructive command.</em>
 </p>
 
 ---
