@@ -1,4 +1,4 @@
-// fstack runtime-api
+// moto runtime-api
 // Minimal code-execution sandbox. POST /exec with {cmd, timeout_ms} → stdout/stderr.
 // Intended for trusted agents only — this is NOT a multi-tenant sandbox.
 

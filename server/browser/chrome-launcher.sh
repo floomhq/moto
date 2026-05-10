@@ -19,7 +19,7 @@ export TZ="${TZ:-Europe/Berlin}"
 
 # Optional: route Chrome through proxy (set PROXY_URL in the runtime .env).
 PROXY_ARG=()
-RUNTIME_ENV="${FSTACK_RUNTIME_DIR:-${MOTO_RUNTIME_DIR:-/opt/moto}}/.env"
+RUNTIME_ENV="${MOTO_RUNTIME_DIR:-/opt/moto}/.env"
 if [[ -f "$RUNTIME_ENV" ]]; then
   # shellcheck disable=SC1091
   source "$RUNTIME_ENV"

@@ -66,7 +66,7 @@ Two mounts, configured in `server/bin/check-mac-mounts`:
 | `/mnt/mac`        | `~/` (the Mac home dir)    | Full Mac access from the server|
 
 The full home mount is what lets `aximg` (copy image to server) and
-`fstack img` work — but it's also a footgun (you can `rm -rf ~/Desktop` from a
+`moto img` work — but it's also a footgun (you can `rm -rf ~/Desktop` from a
 server terminal). Keep an eye on that.
 
 ## If you want the opposite direction
@@ -79,4 +79,4 @@ mkdir -p ~/mnt/ax41
 sshfs ax41:/root ~/mnt/ax41
 ```
 
-This isn't used by fstack but can be handy.
+This isn't used by moto but can be handy.

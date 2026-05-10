@@ -1,5 +1,5 @@
 [Unit]
-Description=fstack — garbage-collect stale node_modules directories
+Description=moto — garbage-collect stale node_modules directories
 After=network.target
 
 [Service]

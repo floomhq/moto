@@ -22,7 +22,7 @@
   <text class="title" x="80" y="68">Mac (local)</text>
 
   <rect class="box" x="60" y="85" width="240" height="40" rx="4"/>
-  <text class="text" x="75" y="110">iTerm + fstack CLI</text>
+  <text class="text" x="75" y="110">iTerm + moto CLI</text>
 
   <rect class="box" x="60" y="140" width="240" height="40" rx="4"/>
   <text class="text" x="75" y="165">Claude Code (control plane)</text>
@@ -82,5 +82,5 @@
 
   <!-- Center label -->
   <rect class="box" x="390" y="240" width="180" height="40" rx="4"/>
-  <text class="text" x="405" y="265">fstack orchestrates</text>
+  <text class="text" x="405" y="265">moto orchestrates</text>
 </svg>

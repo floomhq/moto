@@ -1,5 +1,5 @@
 [Unit]
-Description=fstack — periodic Mac SSHFS health check (every 30s)
+Description=moto — periodic Mac SSHFS health check (every 30s)
 
 [Timer]
 OnBootSec=30s

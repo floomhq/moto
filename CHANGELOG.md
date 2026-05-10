@@ -11,7 +11,7 @@
 
 ## 2026-04-27
 
-- Renamed repo from `buildingopen/moto` to `floomhq/fstack`
+- Renamed GitHub org from `buildingopen` to `floomhq`
 - Added 17th hook: `sandbox-heavy-tasks.sh` for memory-hungry command interception
 - Added `ai-sidecar-health` script for provider verification
 - Expanded skills catalog to 60+ commands

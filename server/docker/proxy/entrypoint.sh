@@ -1,5 +1,5 @@
 #!/bin/sh
-# fstack — tinyproxy entrypoint.
+# moto — tinyproxy entrypoint.
 #
 # Parses $PROXY_URL into a tinyproxy `upstream` directive, substitutes it
 # into the config template, and execs tinyproxy. Works with BusyBox sh

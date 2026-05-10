@@ -1,6 +1,6 @@
 # Server Setup
 
-This directory contains the Linux-side runtime for the full `fstack` remote workflow. The recommended install path is from the repo root:
+This directory contains the Linux-side runtime for the full `moto` remote workflow. The recommended install path is from the repo root:
 
 ```bash
 cp .env.example .env
@@ -27,7 +27,7 @@ The installer keeps `/opt/moto` as the default runtime path for compatibility wi
 - `terminal/` - tmux config and queue helpers
 - `test/` - smoke-test helpers for the server-side runtime
 
-Pair this with the installed `fstack` command on the Mac. [`mac/bin/claude-tabs`](../mac/bin/claude-tabs) remains available as a compatibility wrapper.
+Pair this with the installed `moto` command on the Mac. [`mac/bin/claude-tabs`](../mac/bin/claude-tabs) remains available as a compatibility wrapper.
 
 ## Prerequisites
 
@@ -52,9 +52,9 @@ Pair this with the installed `fstack` command on the Mac. [`mac/bin/claude-tabs`
 After install, your normal entry point is from the Mac:
 
 ```bash
-fstack doctor
-fstack new hello/world
-fstack up
+moto doctor
+moto new hello/world
+moto up
 ```
 
 ## Manual / cherry-pick install

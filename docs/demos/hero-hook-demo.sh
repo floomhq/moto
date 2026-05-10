@@ -20,7 +20,7 @@ sleep 0.5
 printf '\n'
 
 sleep 0.3
-printf '\033[31m[fstack hook] BLOCKED: destructive command outside allowlist\033[0m\n'
+printf '\033[31m[moto hook] BLOCKED: destructive command outside allowlist\033[0m\n'
 
 sleep 0.3
 printf '\033[33m   reason: rm -rf without explicit --i-know-what-im-doing flag\033[0m\n'

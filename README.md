@@ -1,16 +1,16 @@
-# fstack 🛵
+# moto 🛵
 
 ### A terminal IDE for AI agents, extracted from 500+ real sessions
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-compatible-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 
-`fstack` is Floom's terminal IDE for AI agents: Claude as the control plane, Codex for backend/infra/debugging, opencode as an optional worker, subagent workflows, Docker-first runtime, CLAUDE.md / AGENTS.md-style context, safety hooks, 60+ skills, Gmail/WhatsApp integrations, memory, browser automation, and cost tracking.
+`moto` is Floom's terminal IDE for AI agents: Claude as the control plane, Codex for backend/infra/debugging, opencode as an optional worker, subagent workflows, Docker-first runtime, CLAUDE.md / AGENTS.md-style context, safety hooks, 60+ skills, Gmail/WhatsApp integrations, memory, browser automation, and cost tracking.
 
-Formerly floomhq/moto and earlier buildingopen/moto. Old GitHub URLs redirect.
+Formerly buildingopen/moto. Old GitHub URLs redirect.
 
 <p align="center">
-  <img src="assets/hero.gif" alt="fstack hook demo" width="800">
+  <img src="assets/hero.gif" alt="moto hook demo" width="800">
   <br>
   <em>A safety hook firing on a destructive command.</em>
 </p>
@@ -27,7 +27,7 @@ Formerly floomhq/moto and earlier buildingopen/moto. Old GitHub URLs redirect.
 
 ## What makes this different?
 
-Most AI coding setups are a prompt file plus a pile of tools. `fstack` is the full operating environment: context, hooks, skills, memory, terminal sessions, remote server runtime, browser automation, Docker sandboxes, and launcher commands for Claude, Codex, and opencode.
+Most AI coding setups are a prompt file plus a pile of tools. `moto` is the full operating environment: context, hooks, skills, memory, terminal sessions, remote server runtime, browser automation, Docker sandboxes, and launcher commands for Claude, Codex, and opencode.
 
 The philosophy is simple:
 
@@ -44,8 +44,8 @@ The philosophy is simple:
 ## Quick Start
 
 ```bash
-git clone https://github.com/floomhq/fstack.git
-cd fstack
+git clone https://github.com/floomhq/moto.git
+cd moto
 ./install.sh          # Symlinks configs into ~/.claude/
 ```
 
@@ -69,11 +69,11 @@ $EDITOR .env
 
 ## Comparison
 
-|  | bare Claude Code | Claude Code + dotfiles | **fstack** |
+|  | bare Claude Code | Claude Code + dotfiles | **moto** |
 |---|---|---|---|
 | Context | manual per session | static files | CLAUDE.md + AGENTS.md + MEMORY.md |
 | Safety | none | none | **17 hooks** blocking destructive commands, secret leaks, config tampering |
-| Remote workflow | DIY SSH | DIY SSH | **`fstack up`** + SSHFS + systemd + tmux |
+| Remote workflow | DIY SSH | DIY SSH | **`moto up`** + SSHFS + systemd + tmux |
 | Skills | none | none | **60+ slash commands** (/cost, /qa, /ship, /debug, etc.) |
 | Sidecars | none | none | **Groq / Gemini / NVIDIA** routing for cheap stateless work |
 | Memory | none | none | **MEMORY.md** auto-updated across sessions |
@@ -85,7 +85,7 @@ $EDITOR .env
 
 ## Architecture
 
-`fstack` splits agent work between a Mac control plane and a remote Linux runtime. The Mac stays where the human works, while the server owns long-running sessions, containers, cheap sidecar calls, browser automation, and messaging integrations.
+`moto` splits agent work between a Mac control plane and a remote Linux runtime. The Mac stays where the human works, while the server owns long-running sessions, containers, cheap sidecar calls, browser automation, and messaging integrations.
 
 ```mermaid
 flowchart LR
@@ -153,7 +153,7 @@ Read the deep dive: [`docs/architecture.md`](docs/architecture.md)
 | Directory | Contents | Learn more |
 |-----------|----------|------------|
 | [`claude/`](claude/) | CLAUDE.md, hooks, scripts, skills, memory | [`claude/skills/README.md`](claude/skills/README.md) · [`claude/hooks/README.md`](claude/hooks/README.md) · [`claude/memory/README.md`](claude/memory/README.md) |
-| [`mac/`](mac/) | `fstack` CLI, iTerm automation, shell aliases, launchd + SSH templates | [`mac/README.md`](mac/README.md) |
+| [`mac/`](mac/) | `moto` CLI, iTerm automation, shell aliases, launchd + SSH templates | [`mac/README.md`](mac/README.md) |
 | [`server/`](server/) | Systemd services, Docker stack, safety utils, browser automation, tmux | [`docs/bootstrap.md`](docs/bootstrap.md) |
 | [`whatsapp/`](whatsapp/) | OpenClaw gateway, verified send, SQLite contact lookup | [`whatsapp/README.md`](whatsapp/README.md) |
 | [`gmail/`](gmail/) | IMAP checker, multi-account support | [`gmail/`](gmail/) |
@@ -167,7 +167,7 @@ Read the deep dive: [`docs/architecture.md`](docs/architecture.md)
 No. `./install.sh` works locally. Add `./install.sh mac` + `./install.sh server-remote` only when you want the integrated remote workflow.
 
 **Does this replace Claude Code?**
-No. It's the operating environment around Claude Code (and Codex, and opencode). You still use Anthropic's CLI; fstack just makes it reliable, safe, and reproducible.
+No. It's the operating environment around Claude Code (and Codex, and opencode). You still use Anthropic's CLI; moto just makes it reliable, safe, and reproducible.
 
 **Is this safe?**
 17 hooks run on every tool call blocking `rm -rf /`, secret leaks, wrong package managers, unverified WhatsApp sends, and more. See [`claude/hooks/README.md`](claude/hooks/README.md).
