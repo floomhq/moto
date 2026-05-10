@@ -1,4 +1,4 @@
-# fstack — Node runtime sandbox for agent code execution.
+# moto — Node runtime sandbox for agent code execution.
 # Agents POST code/commands to :3001 and get back stdout/stderr.
 # Ships with chromium + common rendering deps so screenshotting works.
 

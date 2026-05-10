@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# fstack — residential proxy sidecar smoke test (tinyproxy).
+# moto — residential proxy sidecar smoke test (tinyproxy).
 #
 # Builds ./server/docker/proxy and proves:
 #   A. PROXY_URL parser handles http / https / socks5, with and without auth.
@@ -22,11 +22,11 @@ if [[ -z "$HOST" ]] && [[ -f .env ]]; then
 fi
 : "${HOST:?set HOST=... or AX41_HOST in .env}"
 
-TAG="fstack-proxy-smoke-$$"
+TAG="moto-proxy-smoke-$$"
 TEST_DIR="/tmp/$TAG"
 NET="$TAG-net"
 
-echo "━━━ fstack proxy sidecar smoke test ━━━"
+echo "━━━ moto proxy sidecar smoke test ━━━"
 echo "  host:    $HOST"
 echo "  tag:     $TAG"
 echo

@@ -1,12 +1,12 @@
 #!/bin/bash
-# install.sh - fstack entry point
+# install.sh - moto entry point
 #
 # Usage:
 #   ./install.sh                     Install ~/.claude from this repo
 #   ./install.sh --copy             Copy instead of symlink for local install
 #   ./install.sh local [--copy]     Explicit local install
-#   ./install.sh mac                Install the integrated fstack Mac workflow
-#   ./install.sh server             Install the integrated fstack server stack
+#   ./install.sh mac                Install the integrated moto Mac workflow
+#   ./install.sh server             Install the integrated moto server stack
 #   ./install.sh server-remote      Upload to the remote box and run server/install.sh
 
 set -euo pipefail
@@ -32,8 +32,8 @@ Usage: $0 [mode]
 
 Modes:
   local [--symlink|--copy]   Install ~/.claude from this repo (default)
-  mac                        Install the integrated fstack Mac workflow
-  server                     Install the integrated fstack server stack
+  mac                        Install the integrated moto Mac workflow
+  server                     Install the integrated moto server stack
   server-remote              Upload the repo to the remote box and run server/install.sh
 
 Legacy local modes:
@@ -135,7 +135,7 @@ install_local() {
 
     echo ""
     echo "============================================"
-    echo "  fstack installer"
+    echo "  moto installer"
     echo "  Mode: $mode"
     echo "============================================"
     echo ""
@@ -222,9 +222,9 @@ install_server_remote() {
     : "${AX41_HOST:?AX41_HOST must be set in .env}"
     : "${AX41_USER:?AX41_USER must be set in .env}"
 
-    local target_dir="${FSTACK_REMOTE_DIR:-${MOTO_REMOTE_DIR:-/opt/moto}}"
+    local target_dir="${MOTO_REMOTE_DIR:-/opt/moto}"
 
-    info "Uploading fstack to $AX41_USER@$AX41_HOST:$target_dir"
+    info "Uploading moto to $AX41_USER@$AX41_HOST:$target_dir"
     rsync -az --delete \
         --exclude '.env.local' \
         --exclude '.git' \

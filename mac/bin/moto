@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# fstack 🛵 — remote-agent control plane
+# moto 🛵 — remote-agent control plane
 #
 # One command to bring your tmux-based agent sessions into one iTerm window.
 #
-# Usage: fstack <subcommand> [args...]
-#   fstack up                    reopen all sessions in one iTerm window
-#   fstack new NAME              create a new claude session (format: project/task)
-#   fstack newx NAME             create a new codex session
-#   fstack newo NAME             create a new opencode session
-#   fstack attach NAME           attach session as a tab in the main window
-#   fstack ls                    list server sessions
-#   fstack kill NAME             kill a session on the server
-#   fstack img PATH              scp an image to the server, print remote path
-#   fstack status                health: tmux count, mounts, chrome, containers
-#   fstack doctor                diagnose the setup
-#   fstack logs                  tail cleanup + mount-check logs on the server
-#   fstack down                  detach all clients (server keeps running)
+# Usage: moto <subcommand> [args...]
+#   moto up                    reopen all sessions in one iTerm window
+#   moto new NAME              create a new claude session (format: project/task)
+#   moto newx NAME             create a new codex session
+#   moto newo NAME             create a new opencode session
+#   moto attach NAME           attach session as a tab in the main window
+#   moto ls                    list server sessions
+#   moto kill NAME             kill a session on the server
+#   moto img PATH              scp an image to the server, print remote path
+#   moto status                health: tmux count, mounts, chrome, containers
+#   moto doctor                diagnose the setup
+#   moto logs                  tail cleanup + mount-check logs on the server
+#   moto down                  detach all clients (server keeps running)
 
 set -euo pipefail
 
@@ -23,7 +23,6 @@ set -euo pipefail
 MOTO_BIN="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))" "${BASH_SOURCE[0]}")"
 MOTO_DIR="$(cd "$(dirname "$MOTO_BIN")/../.." && pwd)"
 APP_NAME="$(basename "${BASH_SOURCE[0]}")"
-[[ "$APP_NAME" == "moto" ]] && APP_NAME="fstack"
 
 if [[ -f "$MOTO_DIR/.env" ]]; then
   # shellcheck disable=SC1091
@@ -112,12 +111,12 @@ cmd_ls() {
 
 cmd_kill() {
   local session
-  session="$(norm_session "${1:?usage: fstack kill NAME}")"
+  session="$(norm_session "${1:?usage: moto kill NAME}")"
   ssh_ax "tmux kill-session -t '$session'" && ok "killed $session"
 }
 
 cmd_img() {
-  local file="${1:?usage: fstack img PATH}"
+  local file="${1:?usage: moto img PATH}"
   [[ -f "$file" ]] || die "not a file: $file"
   local name; name="$(basename "$file")"
   scp -q "$file" "$SSH_HOST:/root/images/$name"
@@ -191,17 +190,16 @@ cmd_doctor() {
     printf '%s⚠%s iTerm AppleScript blocked. System Settings → Privacy → Automation.\n' "$c_yellow" "$c_reset"
   fi
 
-  # 4. fstack command in PATH
-  if command -v fstack >/dev/null; then ok "fstack in PATH ($(command -v fstack))"
-  elif command -v moto >/dev/null; then ok "legacy moto in PATH ($(command -v moto))"
-  else printf '%s⚠%s fstack not in PATH\n' "$c_yellow" "$c_reset"; fi
+  # 4. moto command in PATH
+  if command -v moto >/dev/null; then ok "moto in PATH ($(command -v moto))"
+  else printf '%s⚠%s moto not in PATH\n' "$c_yellow" "$c_reset"; fi
 
   # 4b. Low-cost sidecar commands + provider health
   for cmd in ai-provider-key ai-sidecar ai-sidecar-health; do
     if command -v "$cmd" >/dev/null 2>&1; then
       ok "$cmd in PATH ($(command -v "$cmd"))"
     else
-      printf '%s⚠%s %s not in PATH. Run ./install.sh local after updating fstack.\n' "$c_yellow" "$c_reset" "$cmd"
+      printf '%s⚠%s %s not in PATH. Run ./install.sh local after updating moto.\n' "$c_yellow" "$c_reset" "$cmd"
     fi
   done
   if command -v ai-sidecar-health >/dev/null 2>&1; then
@@ -240,7 +238,7 @@ cmd_doctor() {
   cmd_status
 }
 
-# ── `fstack up` — the big one ────────────────────────────────────────
+# ── `moto up` — the big one ────────────────────────────────────────
 cmd_up() {
   local mode="${1:-bg}"
   if [[ "$mode" == "-fg" ]]; then
@@ -255,7 +253,7 @@ cmd_up() {
   if [[ -f "$pid_file" ]]; then
     local old_pid; old_pid=$(cat "$pid_file" 2>/dev/null || true)
     if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null; then
-      info "fstack up already running (pid $old_pid). Log: $log_file"
+      info "moto up already running (pid $old_pid). Log: $log_file"
       return 0
     fi
     rm -f "$pid_file"
@@ -265,7 +263,7 @@ cmd_up() {
   local new_pid=$!
   echo "$new_pid" > "$pid_file"
   disown "$new_pid" 2>/dev/null || true
-  ok "fstack up started in background (pid $new_pid). Log: $log_file"
+  ok "moto up started in background (pid $new_pid). Log: $log_file"
 }
 
 _up_worker() {
@@ -398,7 +396,7 @@ main() {
     help|-h|--help|"")
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       ;;
-    *) die "unknown subcommand: $sub. Try: fstack help" ;;
+    *) die "unknown subcommand: $sub. Try: moto help" ;;
   esac
 }
 

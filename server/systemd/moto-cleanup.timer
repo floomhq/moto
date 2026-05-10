@@ -1,5 +1,5 @@
 [Unit]
-Description=fstack — run cleanup-stale every 10 minutes
+Description=moto — run cleanup-stale every 10 minutes
 
 [Timer]
 OnBootSec=2min

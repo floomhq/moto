@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# fstack — in-container verification script.
+# moto — in-container verification script.
 #
 # Runs inside a vanilla debian:12 container to validate that server/install.sh
 # succeeds on a clean box. Does NOT require systemd or nested docker.
@@ -12,7 +12,7 @@ set -euo pipefail
 REPO=/opt/moto
 cd "$REPO"
 
-echo "━━━ fstack container test ━━━"
+echo "━━━ moto container test ━━━"
 echo "  uname: $(uname -a)"
 echo "  os:    $(. /etc/os-release; echo "$PRETTY_NAME")"
 echo

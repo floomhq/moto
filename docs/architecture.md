@@ -1,4 +1,4 @@
-# fstack — architecture
+# moto — architecture
 
 ## Physical layout
 
@@ -10,7 +10,7 @@
         │   iTerm ─┐                │
         │          │ AppleScript    │
         │          ▼                │
-        │   fstack CLI                │
+        │   moto CLI                │
         │      │                    │
         │      ▼                    │
         │   ssh ax41 (ControlMaster)│
@@ -64,7 +64,7 @@ its children (your 20+ agent sessions) are touched.
 
 ### 3. One iTerm window, many tabs
 
-The Mac's `fstack up` (in zsh: `axo`) does this dance:
+The Mac's `moto up` (in zsh: `axo`) does this dance:
 
 1. Detaches all existing tmux clients on the server
 2. Lists sessions sorted by activity
@@ -75,7 +75,7 @@ The Mac's `fstack up` (in zsh: `axo`) does this dance:
 5. Waits 12s, then retries any sessions that didn't attach (up to 5 rounds,
    then a final single-pass for stubborn ones)
 
-This is idempotent: calling `fstack up` at any time reconstructs the exact same
+This is idempotent: calling `moto up` at any time reconstructs the exact same
 window layout on your Mac.
 
 ### 4. Logged-in browser for agents
@@ -120,7 +120,7 @@ network are up. It:
 Tmux sessions survive automatically because the tmux server itself is
 restarted by its own systemd unit and sessions were started by
 `cs`/`cx`/`co`, which use `new-session -A` (attach-or-create). They're
-empty until you re-run `fstack up` — but tmux state persists, so prior
+empty until you re-run `moto up` — but tmux state persists, so prior
 scrollback and the Claude CLI process come back cleanly *if* they were
 still alive before the reboot (they won't be, because the box rebooted —
 but the session *slots* are restored automatically when `./cs NAME` is re-run).

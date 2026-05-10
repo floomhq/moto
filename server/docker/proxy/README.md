@@ -1,4 +1,4 @@
-# fstack — residential proxy sidecar
+# moto — residential proxy sidecar
 
 Routes agent traffic through your chosen residential IP provider via an HTTP forward proxy.
 
@@ -40,6 +40,6 @@ If `PROXY_URL` is empty or you don't pass `--profile proxy` to `docker compose`,
 
 ## No SOCKS5 listener in v0.1
 
-Tinyproxy only offers HTTP/HTTPS proxy on the inbound side. It accepts a SOCKS5 **upstream** (outbound), so if your residential provider is SOCKS5 the chain still works — it just means fstack clients need to speak HTTP proxy, not SOCKS5, to reach the sidecar. Chrome, curl, node `https-proxy-agent`, Python `requests`, and every agent CLI in fstack do this natively.
+Tinyproxy only offers HTTP/HTTPS proxy on the inbound side. It accepts a SOCKS5 **upstream** (outbound), so if your residential provider is SOCKS5 the chain still works — it just means moto clients need to speak HTTP proxy, not SOCKS5, to reach the sidecar. Chrome, curl, node `https-proxy-agent`, Python `requests`, and every agent CLI in moto do this natively.
 
 If you genuinely need a local SOCKS5 listener, run `gost` or `microsocks` as a sibling container; it's out of scope for v0.1.

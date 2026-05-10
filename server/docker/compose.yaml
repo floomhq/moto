@@ -1,4 +1,4 @@
-# fstack — container stack.
+# moto — container stack.
 #
 # Services:
 #   proxy        — residential IP egress (3proxy; reads PROXY_URL from .env)
