@@ -10,10 +10,6 @@
 Formerly buildingopen/moto. Old GitHub URLs redirect.
 
 <p align="center">
-  <img src="assets/hero-banner.gif" alt="moto - The operating layer for AI agents" width="800">
-</p>
-
-<p align="center">
   <img src="assets/hero.gif" alt="moto hook demo" width="800">
   <br>
   <em>A safety hook firing on a destructive command.</em>
