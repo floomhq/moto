@@ -18,3 +18,4 @@ jobs:
           ignore_paths: >-
             node_modules
             server/docker/runtime-api
+            server/bin/session-registry-sync

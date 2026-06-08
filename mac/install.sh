@@ -30,7 +30,9 @@ mkdir -p "$BIN_DIR"
 ln -sf "$REPO_DIR/mac/bin/moto" "$BIN_DIR/moto"
 ln -sf "$REPO_DIR/mac/bin/moto" "$BIN_DIR/mt"
 ln -sf "$REPO_DIR/mac/bin/claude-tabs" "$BIN_DIR/claude-tabs"
-echo "✓ linked moto, mt, and claude-tabs to $BIN_DIR"
+ln -sf "$REPO_DIR/mac/bin/ax-tab-kill" "$BIN_DIR/ax-tab-kill"
+ln -sf "$REPO_DIR/mac/bin/ax-tab-kill-install" "$BIN_DIR/ax-tab-kill-install"
+echo "✓ linked moto, mt, claude-tabs, ax-tab-kill to $BIN_DIR"
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
   *) echo "  ⚠ add $BIN_DIR to PATH in your shell profile" ;;

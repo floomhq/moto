@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Session registry + intentional close**: `cs-launch`, `session-registry-sync`, `session-registry-restore`, systemd timer, registry-aware `cs`/`cx`, tombstone-aware `moto up` / `moto kill`
+- **Ctrl+C close race fix**: prune registry + tombstone before `tmux kill-session` (avoids session-closed hook restoring ghosts)
+- **Mac tab kill**: `ax-tab-kill` + `ax-tab-kill-install` (⌘⌃W twice → `moto kill`); see `docs/session-close.md`
 - Added demo GIF framework (`docs/demos/`) with asciinema + agg recording workflow
 - Added `whatsapp/README.md` demo placeholder
 - README diet: trimmed main README to landing-page format

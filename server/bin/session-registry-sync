@@ -1,0 +1,459 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+STATE = Path('/root/.local/state/codex-guardian')
+REGISTRY = STATE / 'sessions.tsv'
+LIVE = STATE / 'live-sessions.tsv'
+UNRESOLVED = STATE / 'unresolved-sessions.tsv'
+PENDING = STATE / 'pending-sessions.tsv'
+CLOSED = STATE / 'closed-sessions.tsv'
+SNAPSHOTS = STATE / 'snapshots'
+LOCK = STATE / '.session-registry-sync.lock'
+CLAUDE_PROJECTS = Path('/root/.claude/projects')
+CLAUDE_META = Path('/root/.claude/sessions')
+CODEX_SESSIONS = Path('/root/.codex/sessions')
+
+UUID_RE = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', re.I)
+SHELL_RE = re.compile(r'^(bash|zsh|sh|fish|tmux)$')
+
+
+def run(cmd):
+    return subprocess.run(cmd, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
+def read_cmdline(pid):
+    try:
+        return Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode(errors='ignore').strip()
+    except Exception:
+        return ''
+
+
+def read_cwd(pid):
+    try:
+        return os.readlink(f'/proc/{pid}/cwd')
+    except Exception:
+        return ''
+
+
+def process_tree():
+    parent = {}
+    args = {}
+    for line in run('ps -eo pid=,ppid=,args=').stdout.splitlines():
+        parts = line.strip().split(None, 2)
+        if len(parts) >= 2:
+            parent[parts[0]] = parts[1]
+            args[parts[0]] = parts[2] if len(parts) > 2 else ''
+    return parent, args
+
+
+def descendants(root, parent, args):
+    root = str(root)
+    out = []
+    for pid in list(args):
+        p = pid
+        seen = set()
+        while p and p != '0' and p not in seen:
+            seen.add(p)
+            if p == root:
+                out.append((pid, args.get(pid, '')))
+                break
+            p = parent.get(p, '')
+    out.sort(key=lambda item: int(item[0]))
+    return out
+
+
+def claude_transcript_exists(session_id):
+    if not session_id:
+        return False
+    for fp in CLAUDE_PROJECTS.rglob(f'{session_id}.jsonl'):
+        try:
+            if fp.stat().st_size > 1024:
+                return True
+        except OSError:
+            pass
+    return False
+
+
+def claude_session_from_pid(pid):
+    fp = CLAUDE_META / f'{pid}.json'
+    if not fp.exists():
+        return ''
+    try:
+        sid = json.loads(fp.read_text()).get('sessionId') or ''
+        return sid if UUID_RE.fullmatch(sid) else ''
+    except Exception:
+        return ''
+
+
+def codex_session_file_exists(session_id):
+    if not session_id:
+        return False
+    for fp in CODEX_SESSIONS.rglob(f'*{session_id}.jsonl'):
+        try:
+            if fp.stat().st_size > 1024:
+                return True
+        except OSError:
+            pass
+    return False
+
+
+def codex_meta_candidates():
+    out = []
+    if not CODEX_SESSIONS.exists():
+        return out
+    for fp in CODEX_SESSIONS.rglob('*.jsonl'):
+        try:
+            st = fp.stat()
+            if st.st_size <= 1024:
+                continue
+            first = fp.open().readline()
+            payload = json.loads(first).get('payload', {})
+            sid = payload.get('id') or ''
+            cwd = payload.get('cwd') or ''
+            ts = payload.get('timestamp') or ''
+            if not sid:
+                continue
+            epoch = 0.0
+            if ts:
+                epoch = datetime.fromisoformat(ts.replace('Z', '+00:00')).timestamp()
+            out.append((sid, cwd, epoch, st.st_mtime, str(fp)))
+        except Exception:
+            continue
+    return out
+
+
+def proc_start_epoch(pid):
+    try:
+        ticks = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
+        stat = Path(f'/proc/{pid}/stat').read_text()
+        start_ticks = int(stat.split()[21])
+        boot = 0.0
+        for line in Path('/proc/stat').read_text().splitlines():
+            if line.startswith('btime '):
+                boot = float(line.split()[1])
+                break
+        return boot + (start_ticks / ticks)
+    except Exception:
+        return 0.0
+
+
+def infer_codex_id(pid, cwd, used_ids, candidates):
+    cmd = read_cmdline(pid)
+    m = re.search(r'\bresume\s+([0-9a-z-]+)', cmd)
+    if m and codex_session_file_exists(m.group(1)):
+        return m.group(1)
+
+    start = proc_start_epoch(pid)
+    best = None
+    for sid, scwd, epoch, mtime, fp in candidates:
+        if sid in used_ids:
+            continue
+        if cwd and scwd and cwd != scwd:
+            continue
+        t = epoch or mtime
+        delta = abs(t - start) if start else 999999
+        if delta <= 180:
+            score = (delta, -mtime)
+            if best is None or score < best[0]:
+                best = (score, sid)
+    return best[1] if best else ''
+
+
+def load_rows(path):
+    order = []
+    rows = {}
+    if path.exists():
+        for line in path.read_text(errors='ignore').splitlines():
+            if not line.strip() or line.startswith('#'):
+                continue
+            parts = line.split('\t')
+            if len(parts) >= 4:
+                name, tool, rid, cwd = parts[:4]
+                rows[name] = {'name': name, 'tool': tool, 'rid': rid, 'cwd': cwd, 'activity': 0}
+                order.append(name)
+    return order, rows
+
+
+def load_pending_names():
+    names = []
+    if PENDING.exists():
+        for line in PENDING.read_text(errors='ignore').splitlines():
+            if not line.strip() or line.startswith('#'):
+                continue
+            name = line.split('\t', 1)[0]
+            if name and name not in names:
+                names.append(name)
+    return names
+
+
+def load_closed_names():
+    names = set()
+    if CLOSED.exists():
+        for line in CLOSED.read_text(errors='ignore').splitlines():
+            if not line.strip() or line.startswith('#'):
+                continue
+            name = line.split('\t', 1)[0]
+            if name:
+                names.add(name)
+    return names
+
+
+def tmux_sessions():
+    sessions = {}
+    out = run("tmux list-sessions -F '#{session_name}\t#{session_activity}' 2>/dev/null").stdout
+    for line in out.splitlines():
+        parts = line.split('\t')
+        if len(parts) >= 2:
+            sessions[parts[0]] = int(parts[1] or 0)
+    return sessions
+
+
+def tmux_panes():
+    panes = []
+    out = run("tmux list-panes -a -F '#{session_name}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}' 2>/dev/null").stdout
+    for line in out.splitlines():
+        parts = line.split('\t')
+        if len(parts) >= 4:
+            name, pid, current_command, current_path = parts[:4]
+            if '/' not in name or name.startswith('q/'):
+                continue
+            panes.append((name, pid, current_command, current_path))
+    return panes
+
+
+def build_live_rows():
+    existing_order, existing = load_rows(REGISTRY)
+    sessions = tmux_sessions()
+    panes = tmux_panes()
+    parent, args = process_tree()
+    codex_candidates = codex_meta_candidates()
+    used_codex_ids = set()
+    rows = {}
+    unresolved = []
+
+    for name, pane_pid, pane_cmd, pane_path in panes:
+        desc = descendants(pane_pid, parent, args)
+        cmd_blob = '\n'.join(cmd for _, cmd in desc)
+        cwd = pane_path if pane_path and os.path.isdir(pane_path) else '/root'
+
+        tool = rid = ''
+        if 'claude' in cmd_blob:
+            for pid, cmd in desc:
+                sid = claude_session_from_pid(pid)
+                if sid and claude_transcript_exists(sid):
+                    tool, rid = 'claude', sid
+                    break
+        if not rid and 'codex' in cmd_blob:
+            for pid, cmd in desc:
+                m = re.search(r'\bresume\s+([0-9a-z-]+)', cmd)
+                if m and codex_session_file_exists(m.group(1)):
+                    tool, rid = 'codex', m.group(1)
+                    break
+            if not rid:
+                for pid, cmd in desc:
+                    if 'codex' not in cmd:
+                        continue
+                    inferred = infer_codex_id(pid, cwd, used_codex_ids, codex_candidates)
+                    if inferred:
+                        tool, rid = 'codex', inferred
+                        break
+            if rid:
+                used_codex_ids.add(rid)
+
+        if not rid and name in existing and not SHELL_RE.match(pane_cmd):
+            old = existing[name]
+            if old['tool'] == 'claude' and claude_transcript_exists(old['rid']):
+                tool, rid, cwd = old['tool'], old['rid'], old['cwd'] if os.path.isdir(old['cwd']) else cwd
+            elif old['tool'] == 'codex' and codex_session_file_exists(old['rid']):
+                tool, rid, cwd = old['tool'], old['rid'], old['cwd'] if os.path.isdir(old['cwd']) else cwd
+
+        if tool and rid:
+            activity = sessions.get(name, 0)
+            rows[name] = {'name': name, 'tool': tool, 'rid': rid, 'cwd': cwd, 'activity': activity}
+        else:
+            unresolved.append((name, pane_pid, pane_cmd, cwd))
+
+    ordered = []
+    seen = set()
+    for name in existing_order:
+        if name in rows and name not in seen:
+            ordered.append(rows[name]); seen.add(name)
+    for row in sorted(rows.values(), key=lambda r: (-r['activity'], r['name'])):
+        if row['name'] not in seen:
+            ordered.append(row); seen.add(row['name'])
+    return ordered, unresolved
+
+
+def valid_registry_row(row):
+    if row['tool'] == 'claude':
+        return claude_transcript_exists(row['rid'])
+    if row['tool'] == 'codex':
+        return codex_session_file_exists(row['rid'])
+    return False
+
+
+def merge_managed_registry(live_rows, adopt_all=False):
+    existing_order, existing = load_rows(REGISTRY)
+    live_by_name = {r['name']: r for r in live_rows}
+    pending_names = set(load_pending_names())
+    closed_names = load_closed_names()
+    managed = []
+    seen = set()
+
+    # Registry is the managed active set. Sync refreshes known rows from live
+    # evidence but does not auto-adopt every old tmux session.
+    for name in existing_order:
+        if name in closed_names:
+            continue
+        row = live_by_name.get(name) or existing.get(name)
+        if not row or name in seen:
+            continue
+        if valid_registry_row(row):
+            managed.append(row); seen.add(name)
+
+    adopt_names = set(live_by_name) if adopt_all else pending_names
+    for name in sorted(adopt_names, key=lambda n: (-live_by_name.get(n, {}).get('activity', 0), n)):
+        if name in closed_names or name in seen or name not in live_by_name:
+            continue
+        row = live_by_name[name]
+        if valid_registry_row(row):
+            managed.append(row); seen.add(name)
+
+    return managed
+
+
+def row_text(rows, observed=False):
+    if observed:
+        now = datetime.now(timezone.utc).isoformat()
+        header = '# session_name\ttool\tresume_id\tcwd\tobserved_at\n'
+        return header + ''.join(f"{r['name']}\t{r['tool']}\t{r['rid']}\t{r['cwd']}\t{now}\n" for r in rows)
+    header = '# session_name\ttool\tresume_id\tcwd\n'
+    return header + ''.join(f"{r['name']}\t{r['tool']}\t{r['rid']}\t{r['cwd']}\n" for r in rows)
+
+
+def write_atomic(path, text, mode=0o600):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=f'.{path.name}.', dir=str(path.parent))
+    with os.fdopen(fd, 'w') as f:
+        f.write(text)
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
+
+
+def write_registry(rows):
+    new_text = row_text(rows)
+    old_text = REGISTRY.read_text(errors='ignore') if REGISTRY.exists() else ''
+    if new_text != old_text:
+        if REGISTRY.exists():
+            backup = REGISTRY.with_name(f'sessions.tsv.bak-sync-{time.strftime("%Y%m%d-%H%M%S")}')
+            shutil.copy2(REGISTRY, backup)
+        write_atomic(REGISTRY, new_text)
+
+
+def prune_pending(managed_names):
+    if not PENDING.exists():
+        return
+    kept = []
+    for line in PENDING.read_text(errors='ignore').splitlines():
+        if not line.strip() or line.startswith('#'):
+            kept.append(line)
+            continue
+        name = line.split('\t', 1)[0]
+        if name not in managed_names:
+            kept.append(line)
+    text = '\n'.join(kept).rstrip() + ('\n' if kept else '')
+    write_atomic(PENDING, text)
+
+
+def maybe_snapshot(managed_rows, live_rows, unresolved, force=False):
+    SNAPSHOTS.mkdir(parents=True, exist_ok=True)
+    now = time.time()
+    latest = SNAPSHOTS / 'latest'
+    recent = False
+    for child in SNAPSHOTS.iterdir():
+        if child.is_dir() and child.name != 'latest':
+            try:
+                if now - child.stat().st_mtime < 55 * 60:
+                    recent = True
+                    break
+            except OSError:
+                pass
+    if recent and not force:
+        return ''
+    stamp = time.strftime('%Y%m%d-%H%M%S')
+    snap = SNAPSHOTS / stamp
+    snap.mkdir(parents=True, exist_ok=False)
+    (snap / 'sessions.tsv').write_text(row_text(managed_rows))
+    (snap / 'live-sessions.tsv').write_text(row_text(live_rows, observed=True))
+    unresolved_text = '# session_name\tpane_pid\tpane_current_command\tcwd\tobserved_at\n'
+    observed = datetime.now(timezone.utc).isoformat()
+    unresolved_text += ''.join(f"{name}\t{pid}\t{cmd}\t{cwd}\t{observed}\n" for name, pid, cmd, cwd in unresolved)
+    (snap / 'unresolved-sessions.tsv').write_text(unresolved_text)
+    manifest = {
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'managed_count': len(managed_rows),
+        'live_count': len(live_rows),
+        'unresolved_count': len(unresolved),
+    }
+    (snap / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    tmp_link = SNAPSHOTS / '.latest.tmp'
+    if tmp_link.exists() or tmp_link.is_symlink():
+        tmp_link.unlink()
+    tmp_link.symlink_to(snap.name)
+    os.replace(tmp_link, latest)
+
+    # Keep roughly 30 days of hourly snapshots.
+    dirs = sorted([p for p in SNAPSHOTS.iterdir() if p.is_dir() and p.name != 'latest'], key=lambda p: p.name)
+    for old in dirs[:-24 * 30]:
+        shutil.rmtree(old, ignore_errors=True)
+    return str(snap)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--quiet', action='store_true')
+    ap.add_argument('--adopt-live', action='store_true', help='explicitly adopt every verified live tmux session into managed registry')
+    ap.add_argument('--snapshot', action='store_true', help='force a rollback snapshot')
+    args = ap.parse_args()
+
+    STATE.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(LOCK), os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        import fcntl
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return 0
+
+    live_rows, unresolved = build_live_rows()
+    managed_rows = merge_managed_registry(live_rows, adopt_all=args.adopt_live)
+    write_registry(managed_rows)
+    write_atomic(LIVE, row_text(live_rows, observed=True))
+    unresolved_text = '# session_name\tpane_pid\tpane_current_command\tcwd\tobserved_at\n'
+    observed = datetime.now(timezone.utc).isoformat()
+    unresolved_text += ''.join(f"{name}\t{pid}\t{cmd}\t{cwd}\t{observed}\n" for name, pid, cmd, cwd in unresolved)
+    write_atomic(UNRESOLVED, unresolved_text)
+    prune_pending({r['name'] for r in managed_rows})
+    snap = maybe_snapshot(managed_rows, live_rows, unresolved, force=args.snapshot)
+
+    if not args.quiet:
+        print(f'managed={len(managed_rows)} live={len(live_rows)} unresolved={len(unresolved)} registry={REGISTRY}')
+        if snap:
+            print(f'snapshot={snap}')
+        for r in managed_rows:
+            print(f"{r['name']}\t{r['tool']}\t{r['rid']}\t{r['cwd']}")
+        if unresolved:
+            print('unresolved:', ', '.join(x[0] for x in unresolved), file=sys.stderr)
+    return 0
+
+if __name__ == '__main__':
+    raise SystemExit(main())

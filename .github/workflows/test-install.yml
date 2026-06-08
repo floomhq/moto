@@ -18,9 +18,10 @@ jobs:
           sed -i 's/^AX41_HOST=.*/AX41_HOST=127.0.0.1/' .env
       - name: Syntax-check scripts
         run: |
-          apt-get update -qq && apt-get install -y -qq bash
+          apt-get update -qq && apt-get install -y -qq bash python3
           for f in install.sh mac/install.sh server/install.sh \
                    server/bin/* mac/bin/moto mac/bin/claude-tabs; do
             bash -n "$f"
             echo "ok: $f"
           done
+          python3 -m py_compile server/bin/session-registry-sync

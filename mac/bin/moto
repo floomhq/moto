@@ -48,6 +48,13 @@ ssh_ax() {
       "$SSH_HOST" "$@"
 }
 
+# List tabs represented by locally running moto/axo SSH attach commands.
+visible_local_sessions() {
+  ps -axo command= 2>/dev/null \
+    | sed -nE "s#^.*[[:space:]]\./cs[[:space:]]+['\"]?([^'\"[:space:]]+)['\"]?.*\$#\1#p" \
+    | sort -u
+}
+
 # Normalize a session name to project/task (task defaults to "main").
 norm_session() {
   local s="${1:-main/main}"
@@ -112,9 +119,24 @@ cmd_ls() {
 cmd_kill() {
   local session
   session="$(norm_session "${1:?usage: moto kill NAME}")"
-  ssh_ax "tmux kill-session -t '$session'" && ok "killed $session"
+  ssh_ax bash -s -- "$session" <<'REMOTE'
+set -euo pipefail
+session="$1"
+tmux kill-session -t "$session" 2>/dev/null || true
+STATE=/root/.local/state/codex-guardian
+for file in "$STATE/sessions.tsv" "$STATE/pending-sessions.tsv" "$STATE/adhoc-sessions.tsv"; do
+  [ -f "$file" ] || continue
+  tmp=$(mktemp)
+  awk -F '\t' -v s="$session" '$1 ~ /^#/ {print; next} $1 != s {print}' "$file" > "$tmp"
+  mv "$tmp" "$file"
+done
+CLOSED="$STATE/closed-sessions.tsv"
+[ -f "$CLOSED" ] || printf '# session_name\tclosed_at\treason\n' > "$CLOSED"
+printf '%s\t%s\t%s\n' "$session" "$(date -Iseconds)" moto-kill >> "$CLOSED"
+/root/bin/session-registry-sync --quiet --snapshot >/dev/null 2>&1 || true
+REMOTE
+  ok "killed and pruned $session"
 }
-
 cmd_img() {
   local file="${1:?usage: moto img PATH}"
   [[ -f "$file" ]] || die "not a file: $file"
@@ -267,58 +289,98 @@ cmd_up() {
 }
 
 _up_worker() {
-  info "detaching existing clients..."
-  ssh_ax 'tmux list-clients -F "#{client_name}" 2>/dev/null | xargs -I{} tmux detach-client -t {} 2>/dev/null' >/dev/null 2>&1 || true
+  info "syncing managed session registry..."
+  ssh_ax '[ -x /root/bin/session-registry-sync ] && /root/bin/session-registry-sync --quiet >/dev/null 2>&1 || true' >/dev/null 2>&1 || true
 
-  info "listing sessions..."
+  info "listing managed sessions..."
   local sessions
-  sessions=$(ssh_ax 'tmux list-sessions -F "#{session_activity}|#{session_name}" 2>/dev/null | grep "/" | grep -v "|q/" | sort -rn | cut -d"|" -f2')
+  sessions=$(ssh_ax "awk -F '\t' 'NF>=4 && \$1 != \"\" && \$1 !~ /^#/ {print \$1}' /root/.local/state/codex-guardian/sessions.tsv 2>/dev/null")
+  local closed
+  closed=$(ssh_ax "awk -F '\t' 'NF && \$1 !~ /^#/ {print \$1}' /root/.local/state/codex-guardian/closed-sessions.tsv 2>/dev/null")
+  if [[ -n "$closed" && -n "$sessions" ]]; then
+    sessions=$(printf '%s\n' "$sessions" | grep -vxFf <(printf '%s\n' "$closed") || true)
+  fi
 
-  [[ -z "$sessions" ]] && { info "no sessions found"; return 0; }
+  [[ -z "$sessions" ]] && { info "no managed sessions found"; return 0; }
 
   local -a sess_array=()
   while IFS= read -r sess; do
     [[ -n "$sess" ]] && sess_array+=("$sess")
   done <<< "$sessions"
 
-  local count=${#sess_array[@]}
-  info "opening $count sessions..."
+  local locally_visible
+  locally_visible=$(visible_local_sessions)
 
-  # Clean iTerm slate
-  pkill -9 iTerm 2>/dev/null || true
-  sleep 1
-  open -a iTerm
-  sleep 2
+  local -a missing=()
+  for sess in "${sess_array[@]}"; do
+    if ! echo "$locally_visible" | grep -qx -- "$sess"; then
+      missing+=("$sess")
+    fi
+  done
+
+  local count=${#missing[@]}
+  local total=${#sess_array[@]}
+  info "opening $count missing session(s); $total managed session(s) expected..."
+  [[ $count -eq 0 ]] && { ok "done. $total/$total connected."; return 0; }
 
   local main_win_id=""
   local -a send_failed=()
   local i=0
-  for sess in "${sess_array[@]}"; do
+  open -g -a iTerm 2>/dev/null || true
+  sleep 1
+  main_win_id=$(osascript -e '
+    tell application "iTerm"
+      if (count of windows) = 0 then return ""
+      set bestWindow to missing value
+      set bestCount to -1
+      repeat with w in windows
+        set tabCount to count of tabs of w
+        if tabCount > bestCount then
+          set bestWindow to w
+          set bestCount to tabCount
+        end if
+      end repeat
+      if bestWindow is missing value then return ""
+      return id of bestWindow
+    end tell
+  ' 2>/dev/null || true)
+
+  for sess in "${missing[@]}"; do
     i=$((i+1))
-    local ssh_cmd="ssh -o ConnectTimeout=8 -o ServerAliveInterval=20 -t $SSH_HOST $CLAUDE_LAUNCHER '$sess' -CC"
+    local ssh_cmd="exec ssh -o ControlMaster=no -S none -o ConnectTimeout=8 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -tt $SSH_HOST $CLAUDE_LAUNCHER '$sess'"
     printf '  [%d/%d] %s ' "$i" "$count" "$sess"
+
+    if ! ssh_ax "cut -f1 /root/.local/state/codex-guardian/sessions.tsv | grep -Fx -- '$sess' >/dev/null" >/dev/null 2>&1; then
+      echo "skipped-preflight"
+      send_failed+=("$sess")
+      continue
+    fi
 
     local used_win_id
     if [[ -z "$main_win_id" ]]; then
       used_win_id=$(osascript -e "
         tell application \"iTerm\"
-          set w to (create window with default profile command \"$ssh_cmd\")
+          set w to (create window with default profile)
+          tell current session of w to write text \"$ssh_cmd\"
           return id of w
         end tell" 2>/dev/null || true)
     else
       used_win_id=$(osascript -e "
         tell application \"iTerm\"
           if (count of windows) = 0 then
-            set w to (create window with default profile command \"$ssh_cmd\")
+            set w to (create window with default profile)
+            tell current session of w to write text \"$ssh_cmd\"
             return id of w
           end if
           try
             tell window id $main_win_id
-              create tab with default profile command \"$ssh_cmd\"
-              return id
+              create tab with default profile
+              tell current session of current tab to write text \"$ssh_cmd\"
+              return $main_win_id
             end tell
           on error
-            set w to (create window with default profile command \"$ssh_cmd\")
+            set w to (create window with default profile)
+            tell current session of w to write text \"$ssh_cmd\"
             return id of w
           end try
         end tell" 2>/dev/null || true)
@@ -334,46 +396,24 @@ _up_worker() {
     sleep 0.55
   done
 
-  [[ -z "$main_win_id" ]] && die "could not create iTerm window"
-
   info "waiting for connections..."
-  sleep 12
+  sleep 10
 
-  # Retry loop
-  for round in 1 2 3 4 5; do
-    local attached
-    attached=$(ssh_ax 'tmux list-clients -F "#{session_name}" 2>/dev/null' 2>/dev/null | sort -u)
-    local connected=0
-    local -a missing=()
-    for sess in "${sess_array[@]}"; do
-      if echo "$attached" | grep -qx -- "$sess"; then
-        connected=$((connected+1))
-      else
-        missing+=("$sess")
-      fi
-    done
-    printf '  connected: %d/%d\n' "$connected" "$count"
-    [[ ${#missing[@]} -eq 0 ]] && break
-    printf '  retry %d: %d missing\n' "$round" "${#missing[@]}"
-
-    for msess in "${missing[@]}"; do
-      local retry_cmd="ssh -o ConnectTimeout=8 -o ServerAliveInterval=20 -t $SSH_HOST $CLAUDE_LAUNCHER '$msess' -CC"
-      osascript -e "
-        tell application \"iTerm\"
-          try
-            tell window id $main_win_id
-              create tab with default profile command \"$retry_cmd\"
-            end tell
-          end try
-        end tell" >/dev/null 2>&1 || true
-      sleep 0.55
-    done
-    sleep 12
+  local final_local_visible
+  final_local_visible=$(visible_local_sessions)
+  local connected=0
+  local -a still_missing=()
+  for sess in "${sess_array[@]}"; do
+    if echo "$final_local_visible" | grep -qx -- "$sess"; then
+      connected=$((connected+1))
+    else
+      still_missing+=("$sess")
+    fi
   done
 
-  local final
-  final=$(ssh_ax 'tmux list-clients -F "#{session_name}" 2>/dev/null' 2>/dev/null | sort -u | grep -c / || true)
-  ok "done. $final/$count connected."
+  [[ ${#send_failed[@]} -gt 0 ]] && printf '  send failed: %s\n' "${send_failed[*]}"
+  [[ ${#still_missing[@]} -gt 0 ]] && printf '  still missing: %s\n' "${still_missing[*]}"
+  ok "done. $connected/$total connected."
 }
 
 # ── Dispatch ─────────────────────────────────────────────────────────

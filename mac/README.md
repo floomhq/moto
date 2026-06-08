@@ -64,6 +64,12 @@ moto kill project/task
 moto doctor
 ```
 
+Session close (Ctrl+C, tab kill, tombstones): see [`../docs/session-close.md`](../docs/session-close.md).
+
+```bash
+mac/bin/ax-tab-kill-install   # ⌘⌃W twice → moto kill + close tab; restart iTerm
+```
+
 Compatibility:
 
 ```bash

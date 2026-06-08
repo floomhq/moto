@@ -1,0 +1,7 @@
+[Unit]
+Description=Sync AX41 tmux session registry from live Claude/Codex processes
+After=tmux.service
+
+[Service]
+Type=oneshot
+ExecStart=/root/bin/session-registry-sync --quiet

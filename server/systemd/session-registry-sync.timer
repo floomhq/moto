@@ -1,0 +1,12 @@
+[Unit]
+Description=Run AX41 session registry sync every minute
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+AccuracySec=10s
+Persistent=true
+Unit=session-registry-sync.service
+
+[Install]
+WantedBy=timers.target

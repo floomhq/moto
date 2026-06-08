@@ -1,0 +1,29 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT="${REPO_DIR}/mac/bin/ax-tab-kill"
+PLIST="$HOME/Library/Preferences/com.googlecode.iterm2.plist"
+KEY="0x77-0x500000"  # W + Command + Control
+
+chmod +x "$SCRIPT"
+
+python3 - <<PY
+import plistlib
+from pathlib import Path
+
+plist_path = Path("$PLIST")
+data = plistlib.loads(plist_path.read_bytes())
+keymap = data.setdefault("GlobalKeyMap", {})
+keymap["$KEY"] = {
+    "Action": "39",  # Invoke Script
+    "Text": "$SCRIPT",
+    "Version": 1,
+}
+plist_path.write_bytes(plistlib.dumps(data))
+print("Installed GlobalKeyMap[$KEY] -> ax-tab-kill")
+print("Restart iTerm for the binding to take effect.")
+PY
+
+echo "Shortcut: ⌘⌃W twice on a remote tab → moto kill + close tab"
+echo "Plain ⌘W still detaches only."

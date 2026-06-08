@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE=/root/.local/state/codex-guardian
+SNAPS="$STATE/snapshots"
+REGISTRY="$STATE/sessions.tsv"
+choice="${1:-latest}"
+
+if [[ "$choice" == "list" || "$choice" == "ls" ]]; then
+  find "$SNAPS" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sed 's#.*/##' | sort | tail -50
+  exit 0
+fi
+
+if [[ "$choice" == "latest" ]]; then
+  target="$SNAPS/latest"
+else
+  target="$SNAPS/$choice"
+fi
+
+[[ -d "$target" ]] || { echo "snapshot not found: $choice" >&2; exit 2; }
+[[ -f "$target/sessions.tsv" ]] || { echo "snapshot has no sessions.tsv: $choice" >&2; exit 2; }
+
+backup="$STATE/sessions.tsv.bak-restore-$(date +%Y%m%d-%H%M%S)"
+[[ -f "$REGISTRY" ]] && cp "$REGISTRY" "$backup"
+cp "$target/sessions.tsv" "$REGISTRY"
+chmod 600 "$REGISTRY"
+/root/bin/session-registry-sync --quiet --snapshot >/dev/null 2>&1 || true
+count=$(awk -F '\t' 'NF>=4 && $1 !~ /^#/ {c++} END{print c+0}' "$REGISTRY")
+echo "restored_snapshot=$choice"
+echo "registry_count=$count"
+echo "backup=$backup"

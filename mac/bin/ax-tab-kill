@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Kill the remote tmux session for the current iTerm tab (double ⌘⌃W).
+
+First press arms; second press within ARM_MS runs `moto kill` + closes the tab.
+Use plain ⌘W to detach without killing the remote session.
+"""
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ARM_MS = 900
+STATE = Path(os.environ.get("TMPDIR", "/tmp")) / "ax-tab-kill.arm"
+SESSION_RE = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$")
+LAUNCHER_RE = re.compile(
+    r"\./(?:cs|cx|co|ki|cu)\s+['\"]?([^'\"\\s]+)['\"]?"
+)
+
+
+def osascript(script: str) -> str:
+    return subprocess.check_output(["osascript", "-e", script], text=True).strip()
+
+
+def current_tab_meta() -> tuple[str, str]:
+    script = r'''
+tell application "iTerm"
+  tell current session of current tab of current window
+    set tabName to name
+    set tabTty to tty
+    return tabName & "\t" & tabTty
+  end tell
+end tell
+'''
+    out = osascript(script)
+    name, tty = out.split("\t", 1)
+    return name.strip(), tty.strip()
+
+
+def clean_title(title: str) -> str | None:
+    title = title.replace("↣ ", "").replace("→ ", "").strip()
+    if SESSION_RE.fullmatch(title):
+        return title
+    return None
+
+
+def session_from_ps(tty: str) -> str | None:
+    if not tty:
+        return None
+    needle = tty.replace("/dev/", "")
+    if needle.startswith("tty"):
+        needle = needle[3:]
+    try:
+        out = subprocess.check_output(["ps", "-axo", "tty=,command="], text=True)
+    except subprocess.CalledProcessError:
+        return None
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        ps_tty, cmd = parts
+        ps_tty = ps_tty.lstrip("tty")
+        if ps_tty != needle:
+            continue
+        m = LAUNCHER_RE.search(cmd)
+        if m:
+            return m.group(1)
+    return None
+
+
+def detect_session() -> str | None:
+    title, tty = current_tab_meta()
+    from_title = clean_title(title)
+    if from_title:
+        return from_title
+    return session_from_ps(tty)
+
+
+def notify(title: str, message: str) -> None:
+    script = f'display notification {message!r} with title {title!r}'
+    subprocess.run(["osascript", "-e", script], check=False)
+
+
+def run_kill(session: str) -> None:
+    moto = shutil.which("moto") or "moto"
+    subprocess.run([moto, "kill", session], check=True)
+
+
+def close_tab() -> None:
+    osascript(
+        'tell application "iTerm" to close current tab of current window'
+    )
+
+
+def main() -> int:
+    session = detect_session()
+    if not session:
+        notify("moto", "No managed session on this tab")
+        return 1
+
+    now_ms = int(time.time() * 1000)
+    if STATE.exists():
+        try:
+            prev_session, prev_ms = STATE.read_text().split()
+            prev_ms = int(prev_ms)
+        except (ValueError, OSError):
+            prev_session, prev_ms = "", 0
+        if prev_session == session and now_ms - prev_ms <= ARM_MS:
+            STATE.unlink(missing_ok=True)
+            try:
+                run_kill(session)
+            except subprocess.CalledProcessError as exc:
+                notify("moto kill failed", session)
+                print(exc, file=sys.stderr)
+                return exc.returncode or 1
+            close_tab()
+            notify("moto", f"Killed {session}")
+            return 0
+
+    STATE.write_text(f"{session} {now_ms}\n")
+    notify("moto", f"Press ⌘⌃W again to kill {session}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+session="${1:-}"
+[[ -n "$session" ]] || exit 2
+shift
+
+PINNED="/root/.local/state/codex-guardian/sessions.tsv"
+PENDING="/root/.local/state/codex-guardian/pending-sessions.tsv"
+ADHOC="/root/.local/state/codex-guardian/adhoc-sessions.tsv"
+CLOSED="/root/.local/state/codex-guardian/closed-sessions.tsv"
+EXIT_LOG="/root/.local/state/codex-guardian/cs-launch-exits.tsv"
+_closed_once=0
+
+prune_registry() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  local tmp
+  tmp="$(mktemp)"
+  awk -F '\t' -v s="$session" '$1 ~ /^#/ {print; next} $1 != s {print}' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+record_closed() {
+  mkdir -p "$(dirname "$CLOSED")"
+  if [[ ! -f "$CLOSED" ]]; then
+    printf '# session_name\tclosed_at\treason\n' > "$CLOSED"
+  fi
+  printf '%s\t%s\t%s\n' "$session" "$(date -Iseconds)" "intentional-exit" >> "$CLOSED"
+}
+
+close_session() {
+  [[ "$_closed_once" -eq 0 ]] || return 0
+  _closed_once=1
+  # Tombstone + prune BEFORE kill-session. The session-closed tmux hook runs
+  # session-registry-sync in the background; if we kill first, that sync can
+  # rewrite the managed registry from stale state and undo intentional closes.
+  prune_registry "$PINNED"
+  prune_registry "$PENDING"
+  prune_registry "$ADHOC"
+  record_closed
+  /root/bin/session-registry-sync --quiet --snapshot >/dev/null 2>&1 || true
+  tmux kill-session -t "$session" >/dev/null 2>&1 || true
+}
+
+# Keep the supervisor alive on terminal Ctrl+C. The child resets INT/TERM to
+# normal handling, so parent can observe rc and decide whether to prune.
+trap '' INT
+set +e
+bash -c 'trap - INT TERM; exec "$@"' _ "$@"
+rc=$?
+set -e
+trap - INT
+
+mkdir -p "$(dirname "$EXIT_LOG")"
+printf '%s\t%s\trc=%s\tcmd=%s\n' "$session" "$(date -Iseconds)" "$rc" "$*" >> "$EXIT_LOG"
+
+# Clean user exits and Ctrl+C-style exits are intentional closes. Error exits
+# remain recoverable from the managed registry and hourly snapshots.
+if [[ "$rc" -eq 0 || "$rc" -eq 130 ]]; then
+  close_session
+fi
+exit "$rc"

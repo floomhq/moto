@@ -52,6 +52,9 @@ echo "── Phase 2: file layout checks ──"
 check "/root/cs installed"                     test -x /root/cs
 check "/root/cx installed"                     test -x /root/cx
 check "/root/co installed"                     test -x /root/co
+check "/root/bin/cs-launch installed"          test -x /root/bin/cs-launch
+check "/root/bin/session-registry-sync installed" test -x /root/bin/session-registry-sync
+check "/root/bin/session-registry-restore installed" test -x /root/bin/session-registry-restore
 check "/usr/local/bin/check-mac-mounts"        test -x /usr/local/bin/check-mac-mounts
 check "/usr/local/bin/chrome-bridge-keeper"    test -x /usr/local/bin/chrome-bridge-keeper
 check "/usr/local/bin/cleanup-stale"           test -x /usr/local/bin/cleanup-stale
@@ -71,7 +74,8 @@ echo "── Phase 3: systemd unit files installed ──"
 for u in tmux-server.service authenticated-chrome.service chrome-bridge-keeper.service \
          cdp-docker-proxy.service mac-mount-check.timer mac-mount-check.service \
          moto-cleanup.timer moto-cleanup.service node-modules-gc.timer \
-         node-modules-gc.service moto-reboot-recovery.service; do
+         node-modules-gc.service session-registry-sync.timer \
+         session-registry-sync.service moto-reboot-recovery.service; do
   check "unit $u"   test -f "/etc/systemd/system/$u"
 done
 
@@ -100,12 +104,14 @@ done
 echo
 echo "── Phase 5: installed scripts parse cleanly (bash -n) ──"
 for s in /root/cs /root/cx /root/co \
+         /root/bin/cs-launch /root/bin/session-registry-restore \
          /usr/local/bin/check-mac-mounts /usr/local/bin/chrome-bridge-keeper \
          /usr/local/bin/cleanup-stale /usr/local/bin/kill-claude-orphans \
          /usr/local/bin/node-modules-gc /usr/local/bin/moto-reboot-recovery \
          /root/authenticated-browser/chrome-launcher.sh; do
   check "bash -n $s"   bash -n "$s"
 done
+check "py_compile /root/bin/session-registry-sync" python3 -m py_compile /root/bin/session-registry-sync
 
 echo
 echo "── Phase 6: docker compose config validates ──"

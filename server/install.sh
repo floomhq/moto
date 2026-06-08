@@ -60,7 +60,7 @@ if [[ "$SKIP_OS_INSTALL" != "1" ]]; then
   apt-get update -qq
   apt-get install -y -qq \
     tmux socat sshfs fuse3 \
-    xvfb curl wget jq \
+    xvfb curl wget jq python3 \
     earlyoom \
     ca-certificates gnupg lsb-release \
     rsync \
@@ -126,9 +126,20 @@ safe_install() {
 }
 
 echo "→ installing scripts..."
+install -d /root/bin
 safe_install server/bin/cs                    /root/cs
 safe_install server/bin/cx                    /root/cx
 safe_install server/bin/co                    /root/co
+safe_install server/bin/cs-launch             /root/bin/cs-launch
+safe_install server/bin/session-registry-sync /root/bin/session-registry-sync
+safe_install server/bin/session-registry-restore /root/bin/session-registry-restore
+safe_install server/tmux.session-registry-hooks.conf /root/.tmux.session-registry-hooks.conf
+if [[ -f /root/.tmux.conf ]]; then
+  if ! grep -q 'tmux.session-registry-hooks.conf' /root/.tmux.conf; then
+    printf '\nsource-file /root/.tmux.session-registry-hooks.conf\n' >> /root/.tmux.conf
+    echo "  ✓ /root/.tmux.conf: source registry hooks"
+  fi
+fi
 safe_install server/bin/check-mac-mounts      /usr/local/bin/check-mac-mounts
 safe_install server/bin/chrome-bridge-keeper  /usr/local/bin/chrome-bridge-keeper
 safe_install server/bin/cleanup-stale         /usr/local/bin/cleanup-stale
@@ -210,6 +221,7 @@ else
     mac-mount-check.timer \
     moto-cleanup.timer \
     node-modules-gc.timer \
+    session-registry-sync.timer \
     moto-reboot-recovery.service \
     earlyoom.service; do
     systemctl enable "$unit" 2>/dev/null || true

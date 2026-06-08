@@ -5,6 +5,8 @@
 node_modules/
 *.log
 *.pid
+__pycache__/
+WORKPLAN-*.md
 
 server/browser/profile-backups/
 server/docker/proxy/config.local.yaml
